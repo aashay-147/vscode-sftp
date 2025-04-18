@@ -1,5 +1,3 @@
-# Commands
-
 ## Common commands
 
 ### SFTP: Config
