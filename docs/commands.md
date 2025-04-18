@@ -60,7 +60,6 @@ Stop the current transfers (upload and download).
 ## SFTP: Open SSH in Terminal
 Open a terminal in VSCode and auto login to a specific server.
 
-***
 
 # Alt commands
 An alternative command can be found when pressing `Alt` while opening a menu.
