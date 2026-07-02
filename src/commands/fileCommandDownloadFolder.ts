@@ -7,5 +7,7 @@ export default checkFileCommand({
   id: COMMAND_DOWNLOAD_FOLDER,
   getFileTarget: uriFromExplorerContextOrEditorContext,
 
-  handleFile: downloadFolder,
+  async handleFile(ctx) {
+    await downloadFolder(ctx, { useDownloadPath: true });
+  },
 });

@@ -1,6 +1,9 @@
 import { refreshRemoteExplorer } from '../shared';
 import createFileHandler, { FileHandlerContext } from '../createFileHandler';
 import { transfer, sync, TransferOption, SyncOption, TransferDirection } from './transfer';
+import { DownloadOption, resolveDownloadTargetFsPath } from './downloadTarget';
+
+export { DownloadOption };
 
 function createTransferHandle(direction: TransferDirection) {
   return async function handle(this: FileHandlerContext, option) {
@@ -14,7 +17,7 @@ function createTransferHandle(direction: TransferDirection) {
       transferConfig = {
         srcFsPath: remoteFsPath,
         srcFs: remoteFs,
-        targetFsPath: localFsPath,
+        targetFsPath: resolveDownloadTargetFsPath(this, option),
         targetFs: localFs,
         transferOption: option,
         transferDirection: TransferDirection.REMOTE_TO_LOCAL,
@@ -172,7 +175,7 @@ export const uploadFolder = createFileHandler<TransferOption>({
   },
 });
 
-export const download = createFileHandler<TransferOption>({
+export const download = createFileHandler<DownloadOption>({
   name: 'download',
   handle: downloadHandle,
   transformOption() {
@@ -185,7 +188,7 @@ export const download = createFileHandler<TransferOption>({
   },
 });
 
-export const downloadFile = createFileHandler<TransferOption>({
+export const downloadFile = createFileHandler<DownloadOption>({
   name: 'download file',
   handle: downloadHandle,
   transformOption() {
@@ -198,7 +201,7 @@ export const downloadFile = createFileHandler<TransferOption>({
   },
 });
 
-export const downloadFolder = createFileHandler<TransferOption>({
+export const downloadFolder = createFileHandler<DownloadOption>({
   name: 'download folder',
   handle: downloadHandle,
   transformOption() {

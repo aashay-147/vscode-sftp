@@ -70,6 +70,10 @@
         "description": "True to download when a file opens.",
         "default": "confirm"
       },
+      "downloadPath": {
+        "type": "string",
+        "description": "Local folder that explicit download commands (Download, Download File/Folder/Project) write into, preserving the remote folder structure. Absolute, or relative to the context folder. Supports \"~/\". Does not affect upload, sync, diff, downloadOnOpen or Edit in Local. Can be overridden per profile."
+      },
       "syncOption": {
         "type": "object",
         "description": "Configuration the behavior of `Sync` command.",

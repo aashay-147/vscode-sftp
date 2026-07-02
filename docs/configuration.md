@@ -22,6 +22,7 @@ The configuration file can always be accessed with `CTRL` + `Shift` + `P`, and s
 - [useTempFile](#usetempfile)
 - [openSsh](#openssh)
 - [downloadOnOpen](#downloadonopen)
+- [downloadPath](#downloadpath)
 - [syncOption](#syncoption)
 - [ignore](#ignore)
 - [ignoreFile](#ignorefile)
@@ -237,6 +238,26 @@ Download the file from the remote server whenever it is opened.
 ```json
 {
   "downloadOnOpen": true
+}
+```
+
+### downloadPath
+Local folder that the explicit download commands (`Download`, `Download File`, `Download Folder`, `Download Project`, `Download Active File`, `Download Active Folder`, `Download (Force)`) write into, preserving the remote folder structure. An absolute path, a path relative to the `context` folder, or a `~/` path. When unset, downloads go to the usual context-mapped location.
+
+It does **not** affect upload, sync, diff, `downloadOnOpen` or `Edit in Local`. Like most options it can be overridden per profile.
+
+| Key | Value | Default |
+| --- | --- | --- |
+| *downloadPath* | *string* | *unset* |
+
+```json
+{
+  "downloadPath": "./_downloads",
+  "profiles": {
+    "prod": {
+      "downloadPath": "~/backups/prod"
+    }
+  }
 }
 ```
 

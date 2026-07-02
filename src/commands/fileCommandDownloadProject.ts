@@ -8,6 +8,6 @@ export default checkFileCommand({
   getFileTarget: selectContext,
 
   async handleFile(ctx) {
-    await downloadFolder(ctx);
+    await downloadFolder(ctx, { useDownloadPath: true });
   },
 });

@@ -40,6 +40,7 @@ interface ServiceOption {
   useTempFile: boolean;
   openSsh: boolean;
   downloadOnOpen: boolean | 'confirm';
+  downloadPath?: string;
   filePerm?: number;
   dirPerm?: number;
   syncOption: {

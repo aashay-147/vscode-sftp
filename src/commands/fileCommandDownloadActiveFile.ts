@@ -8,6 +8,6 @@ export default checkFileCommand({
   getFileTarget: getActiveDocumentUri,
 
   async handleFile(ctx) {
-    await downloadFile(ctx, { ignore: null });
+    await downloadFile(ctx, { ignore: null, useDownloadPath: true });
   },
 });

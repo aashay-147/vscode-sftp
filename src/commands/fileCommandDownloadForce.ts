@@ -8,6 +8,6 @@ export default checkFileCommand({
   getFileTarget: uriFromExplorerContextOrEditorContext,
 
   async handleFile(ctx) {
-    await download(ctx, { ignore: null });
+    await download(ctx, { ignore: null, useDownloadPath: true });
   },
 });

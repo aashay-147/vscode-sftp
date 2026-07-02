@@ -41,6 +41,7 @@ const configScheme = {
   useTempFile: Joi.boolean(),
   openSsh: Joi.boolean(),
   downloadOnOpen: Joi.boolean().allow('confirm'),
+  downloadPath: Joi.string(),
 
   ignore: Joi.array()
     .min(0)
