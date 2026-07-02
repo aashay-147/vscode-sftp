@@ -25,6 +25,7 @@ VSCode-SFTP enables you to add, edit or delete files within a local directory an
 
 - Features
   - [Browser remote with Remote Explorer](#remote-explorer)
+  - [Folder Compare](#folder-compare)
   - Diff local and remote
   - Sync directory
   - Upload/Download
@@ -274,6 +275,22 @@ In sftp.json:
   "ignore": [".vscode", ".git", ".DS_Store"]
 }
 ```
+
+## Folder Compare
+
+Compare a local folder with its remote counterpart and see, per file, what differs:
+
+- **Modified** — exists on both sides but differs (same size + modification time test the `Sync` commands use).
+- **New Remote** — exists only on the remote.
+- **New Local** — exists only locally.
+
+How to use it:
+
+1. Right-click a folder in the explorer (or a folder in the Remote Explorer) and pick `SFTP: Compare Folder with Remote`, or run `SFTP: Compare Active Folder with Remote` from the command palette.
+2. The **Folder Compare** view in the SFTP activity bar container shows the three groups. `ignore` rules from your config apply.
+3. Click a _Modified_ entry to open a diff. Use the inline actions to download (_New Remote_, _Modified_) or upload (_New Local_, _Modified_) an entry; the comparison re-runs afterwards. The refresh button re-runs the comparison at any time.
+
+_Note:_ with a non-zero `remoteTimeOffsetInHours` the _Modified_ group may over-report changes (known upstream time-offset round-trip issue).
 
 ## Remote Explorer
 ![remote-explorer-preview](https://raw.githubusercontent.com/Natizyskunk/vscode-sftp/master/assets/showcase/remote-explorer.png)
