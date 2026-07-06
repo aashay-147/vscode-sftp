@@ -1,0 +1,75 @@
+{
+  "name": "vscode-sftp Extension Dev",
+  // Single-container build. This is a Node/TypeScript VS Code extension — no
+  // database, no multi-service compose, no docker-in-docker. Everything the
+  // build/test needs (node, npm, webpack, jest, git, gh) lives in this image.
+  "build": {
+    "dockerfile": "Dockerfile",
+    "args": {
+      "TZ": "Asia/Dubai"
+    }
+  },
+  // NET_ADMIN/NET_RAW: init-firewall.sh manipulates iptables/ipset to lock
+  // egress. (In the old compose setup these came from cap_add; with a plain
+  // Dockerfile build they must be passed as run args.)
+  "runArgs": ["--cap-add=NET_ADMIN", "--cap-add=NET_RAW"],
+  "containerEnv": {
+    "NODE_OPTIONS": "--max-old-space-size=4096",
+    "CLAUDE_CONFIG_DIR": "/home/node/.claude"
+  },
+  "customizations": {
+    "vscode": {
+      // Trimmed to this project's toolchain: the extension is authored in
+      // TypeScript, tested with Jest, and linted with TSLint. Prisma/Tailwind/
+      // Postman/Postgres/docker/bicep extensions from the inherited config were
+      // for a different project and are gone.
+      "extensions": [
+        "anthropic.claude-code",
+        "Orta.vscode-jest",
+        "dbaeumer.vscode-eslint",
+        "esbenp.prettier-vscode",
+        "DavidAnson.vscode-markdownlint"
+      ],
+      "settings": {
+        "typescript.tsdk": "node_modules/typescript/lib",
+        "typescript.enablePromptUseWorkspaceTsdk": true,
+        "editor.formatOnSave": false,
+        "git.autorefresh": false,
+        "git.autofetch": false,
+        "git.detectSubmodules": false,
+        "terminal.integrated.defaultProfile.linux": "zsh",
+        "terminal.integrated.profiles.linux": {
+          "bash": {
+            "path": "bash",
+            "icon": "terminal-bash"
+          },
+          "zsh": {
+            "path": "zsh"
+          }
+        },
+        "claudeCode.useCtrlEnterToSend": true,
+        "claudeCode.preferredLocation": "sidebar"
+      }
+    }
+  },
+  "remoteUser": "node",
+  // Pin the workspace to /workspace. Without these, VS Code defaults to mounting
+  // at /workspaces/<folder> — which breaks the Dockerfile WORKDIR, post-create.sh
+  // (cd /workspace), the git safe.directory, and the postCreateCommand path.
+  "workspaceFolder": "/workspace",
+  "workspaceMount": "source=${localWorkspaceFolder},target=/workspace,type=bind,consistency=cached",
+  "mounts": [
+    // SSH keys for git push to origin (our fork) and upstream PRs.
+    "source=${localEnv:USERPROFILE}${localEnv:HOME}/.ssh,target=/home/node/.ssh,type=bind,consistency=cached",
+    // Persist shell + Claude history across rebuilds.
+    "source=vscode-sftp-bashhistory,target=/commandhistory,type=volume",
+    "source=vscode-sftp-claude-config,target=/home/node/.claude,type=volume"
+  ],
+  "hostRequirements": {
+    "cpus": 2,
+    "memory": "4gb"
+  },
+  "postCreateCommand": "sed -i 's/\\r$//' /workspace/.devcontainer/post-create.sh && bash /workspace/.devcontainer/post-create.sh",
+  "postStartCommand": "sudo /usr/local/bin/fix-ssh-permissions.sh && sudo /usr/local/bin/init-firewall.sh",
+  "waitFor": "postStartCommand"
+}

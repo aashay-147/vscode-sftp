@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git -C /workspace diff --stat)",
+      "Bash(git -C /workspace diff src/app.ts)",
+      "Bash(git rev-list *)"
+    ]
+  }
+}

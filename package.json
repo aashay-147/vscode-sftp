@@ -49,9 +49,20 @@
           "id": "remoteExplorer",
           "name": "Explorer",
           "when": "sftp.enabled"
+        },
+        {
+          "id": "sftpCompare",
+          "name": "Folder Compare",
+          "when": "sftp.enabled"
         }
       ]
     },
+    "viewsWelcome": [
+      {
+        "view": "sftpCompare",
+        "contents": "Compare a local folder with its remote counterpart.\n[Compare Active Folder](command:sftp.compareActiveFolder)\nYou can also right-click any folder and pick \"SFTP: Compare Folder with Remote\"."
+      }
+    ],
     "configuration": {
       "type": "object",
       "title": "sftp configuration",
@@ -292,6 +303,40 @@
           "light": "resources/light/refresh.svg",
           "dark": "resources/dark/refresh.svg"
         }
+      },
+      {
+        "command": "sftp.compareFolder",
+        "title": "Compare Folder with Remote",
+        "category": "SFTP"
+      },
+      {
+        "command": "sftp.compareActiveFolder",
+        "title": "Compare Active Folder with Remote",
+        "category": "SFTP"
+      },
+      {
+        "command": "sftp.compare.refresh",
+        "title": "Refresh Comparison",
+        "category": "SFTP",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "sftp.compare.diff",
+        "title": "Diff with Remote",
+        "category": "SFTP",
+        "icon": "$(diff)"
+      },
+      {
+        "command": "sftp.compare.download",
+        "title": "Download from Remote",
+        "category": "SFTP",
+        "icon": "$(cloud-download)"
+      },
+      {
+        "command": "sftp.compare.upload",
+        "title": "Upload to Remote",
+        "category": "SFTP",
+        "icon": "$(cloud-upload)"
       }
     ],
     "menus": {
@@ -447,6 +492,30 @@
         {
           "command": "sftp.remoteExplorer.refresh",
           "when": "false"
+        },
+        {
+          "command": "sftp.compareFolder",
+          "when": "sftp.enabled"
+        },
+        {
+          "command": "sftp.compareActiveFolder",
+          "when": "sftp.enabled"
+        },
+        {
+          "command": "sftp.compare.refresh",
+          "when": "sftp.enabled"
+        },
+        {
+          "command": "sftp.compare.diff",
+          "when": "false"
+        },
+        {
+          "command": "sftp.compare.download",
+          "when": "false"
+        },
+        {
+          "command": "sftp.compare.upload",
+          "when": "false"
         }
       ],
       "explorer/context": [
@@ -507,6 +576,11 @@
           "group": "sftp.trans@2",
           "alt": "sftp.forceDownload",
           "when": "sftp.enabled && explorerResourceIsFolder"
+        },
+        {
+          "command": "sftp.compareFolder",
+          "group": "3_compare",
+          "when": "sftp.enabled && explorerResourceIsFolder"
         }
       ],
       "editor/context": [
@@ -559,6 +633,11 @@
         {
           "command": "sftp.remoteExplorer.refresh",
           "when": "view == remoteExplorer",
+          "group": "navigation"
+        },
+        {
+          "command": "sftp.compare.refresh",
+          "when": "view == sftpCompare",
           "group": "navigation"
         }
       ],
@@ -640,6 +719,41 @@
           "command": "sftp.download.folder",
           "group": "inline",
           "when": "sftp.enabled && view == remoteExplorer && viewItem == folder"
+        },
+        {
+          "command": "sftp.compareFolder",
+          "group": "3_trans@9",
+          "when": "view == remoteExplorer && viewItem != file"
+        },
+        {
+          "command": "sftp.compare.diff",
+          "group": "inline@1",
+          "when": "view == sftpCompare && viewItem == compareItem-modified"
+        },
+        {
+          "command": "sftp.compare.download",
+          "group": "inline@2",
+          "when": "view == sftpCompare && viewItem == compareItem-newRemote || view == sftpCompare && viewItem == compareItem-modified"
+        },
+        {
+          "command": "sftp.compare.upload",
+          "group": "inline@3",
+          "when": "view == sftpCompare && viewItem == compareItem-newLocal || view == sftpCompare && viewItem == compareItem-modified"
+        },
+        {
+          "command": "sftp.compare.diff",
+          "group": "1_action@1",
+          "when": "view == sftpCompare && viewItem == compareItem-modified"
+        },
+        {
+          "command": "sftp.compare.download",
+          "group": "1_action@2",
+          "when": "view == sftpCompare && viewItem == compareItem-newRemote || view == sftpCompare && viewItem == compareItem-modified"
+        },
+        {
+          "command": "sftp.compare.upload",
+          "group": "1_action@3",
+          "when": "view == sftpCompare && viewItem == compareItem-newLocal || view == sftpCompare && viewItem == compareItem-modified"
         }
       ],
       "scm/title": [

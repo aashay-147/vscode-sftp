@@ -3,6 +3,7 @@ import { Uri, window } from 'vscode';
 import { FileType } from '../core';
 import { getAllFileService } from '../modules/serviceManager';
 import { ExplorerItem } from '../modules/remoteExplorer';
+import { CompareItem } from '../modules/compareExplorer';
 import { getActiveTextEditor } from '../host';
 import { listFiles, toLocalPath, simplifyPath } from '../helper';
 
@@ -156,6 +157,15 @@ export function selectFolderFallbackToConfigContext(item, items): Promise<undefi
   }
 
   return selectContext();
+}
+
+// file entry selected in the folder-compare view
+export function uriFromCompareItem(item: CompareItem): Uri | undefined {
+  if (!item || item.kind !== 'entry') {
+    return;
+  }
+
+  return Uri.file(item.entry.localFsPath);
 }
 
 // selected file from all remote files
