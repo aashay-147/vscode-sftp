@@ -146,6 +146,8 @@ fi
 # egress to it is allowed on any port (the SFTP server listens on tcp/99).
 echo "Adding SFTP host 91.72.158.162"
 ipset add allowed-domains 91.72.158.162 -exist
+echo "Adding SFTP host 199.195.118.238"
+ipset add allowed-domains 199.195.118.238 -exist
 
 # Get host IP from default route
 HOST_IP=$(ip route | grep default | cut -d" " -f3)

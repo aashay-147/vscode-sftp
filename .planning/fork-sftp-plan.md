@@ -520,7 +520,8 @@ actually saves work across many files.
 **Goal:** replace the coarse global spinner (shared indiscriminately by every file
 handler) with real per-operation progress feedback for the two longest-running,
 multi-file operations users interact with most — sync and folder compare — using VS
-Code's native progress UI.
+Code's native progress UI, plus pause/resume/stop controls so a long transfer can be
+held and continued instead of only cancelled outright.
 
 **Current state:** `vscode.window.withProgress`/`ProgressLocation` is used **nowhere**
 in `src/` (confirmed by repo-wide grep). The only existing feedback:
@@ -541,6 +542,16 @@ in `src/` (confirmed by repo-wide grep). The only existing feedback:
 - Folder compare's own walk ([compare.ts:35-72,74-129](src/fileHandlers/compare.ts#L35-L72))
   bypasses the scheduler entirely (see Feature 1/2 notes on `collectFiles`'s raw
   `Promise.all`) — it gets **zero** per-item feedback today, only the blunt spinner.
+- **Pause/resume already half-exists, unused.** The underlying `Scheduler`
+  ([scheduler.ts:78-196](src/core/scheduler.ts#L78-L196)) already implements
+  `pause()`/`start()`/`isRunning` (`scheduler.ts:128-141,159-161`) — pausing just stops
+  new tasks from starting; in-flight tasks finish normally. But the `TransferScheduler`
+  wrapper handed to callers (`fileService.createTransferScheduler()`,
+  [fileService.ts:454-512](src/core/fileService.ts#L454-L512)) only exposes `stop()`
+  ([fileService.ts:475-478](src/core/fileService.ts#L475-L478), which calls
+  `scheduler.empty()` to clear the queue) — no `pause`/`resume` passthrough exists at
+  that layer today, and nothing in the codebase calls `Scheduler.pause()`/`start()`
+  outside its own `add()`/constructor logic.
 
 **Changes:**
 
@@ -569,15 +580,40 @@ in `src/` (confirmed by repo-wide grep). The only existing feedback:
    existing spinner-only behavior — this feature is scoped to the two multi-file
    operations users asked about.
 
-4. **Docs** — note in the README's Sync and Folder Compare sections that progress now
-   surfaces as a VS Code notification, and (for compare) that it starts indeterminate
-   until Feature 2 lands.
+4. **Pause/Resume/Stop controls.** Add `pause()`/`resume()` passthroughs to the
+   `TransferScheduler` wrapper ([fileService.ts:454-512](src/core/fileService.ts#L454-L512))
+   that simply call the already-implemented `Scheduler.pause()`/`start()`
+   ([scheduler.ts:128-141](src/core/scheduler.ts#L128-L141)) — no new queueing logic
+   needed, just exposing what's already there. Since `vscode.window.withProgress`
+   ([Change 1](#feature-5--progress-indication-for-compare--sync) above) only gives a
+   single Cancel action via `CancellationToken` (no native pause button), add Pause/
+   Resume as their own commands (`sftp.transfer.pause` / `sftp.transfer.resume`,
+   new `fileCommand*.ts` files picked up by the existing auto-loader — see
+   [src/initCommands.ts](src/initCommands.ts)) surfaced as buttons on
+   `app.sftpBarItem` ([src/ui/statusBarItem.ts:16-131](src/ui/statusBarItem.ts#L16-L131))
+   while `fileService.isTransferring()` ([fileService.ts:431-433](src/core/fileService.ts#L431-L433))
+   is true, and reflected in the progress notification's `message` text (e.g. "Paused —
+   12/40 files"). **Stop** reuses the existing Cancel wiring from Change 1
+   (`cancelTransferTasks()`, [fileService.ts:435-444](src/core/fileService.ts#L435-L444)) —
+   keep its current semantics (queued tasks dropped via `scheduler.empty()`, in-flight
+   tasks run to completion, nothing new starts) and just label it clearly as distinct
+   from Pause (which keeps the queue intact for Resume).
+
+5. **Docs** — note in the README's Sync and Folder Compare sections that progress now
+   surfaces as a VS Code notification with Pause/Resume/Stop controls, and (for
+   compare) that it starts indeterminate until Feature 2 lands.
 
 **Edge cases:** cancellation mid-sync must not leave state worse than today — confirm
 `scheduler.stop()` is a clean stop between files, not a mid-file abort; compare's
 indeterminate progress (no known total without a separate counting pass) is an
 accepted limitation — an upfront count would double directory-listing work, so it's
-deferred unless Feature 2's scheduler integration makes it cheap.
+deferred unless Feature 2's scheduler integration makes it cheap. Pause/Resume only
+meaningfully applies to Sync until Feature 2 routes compare through
+`createTransferScheduler` too — until then, pausing a compare walk has nothing to hook
+into. Guard the status-bar Pause/Resume buttons so they only appear/enable while
+`isTransferring()` is true, to avoid dangling controls with no active operation; a
+paused transfer left paused indefinitely should not block VS Code shutdown/reload
+(confirm `deactivate()` still tears down cleanly with a non-empty paused queue).
 
 ---
 
@@ -816,6 +852,11 @@ here so it isn't forgotten.
   (scheduler-routed walk; progress counter callback),
   [src/fileHandlers/createFileHandler.ts](src/fileHandlers/createFileHandler.ts)
   (optional `withProgress`-wrapping option),
+  [src/core/fileService.ts](src/core/fileService.ts) (`TransferScheduler`
+  `pause()`/`resume()` passthrough to `Scheduler.pause()`/`start()`),
+  [src/ui/statusBarItem.ts](src/ui/statusBarItem.ts) (Pause/Resume buttons, shown
+  while transferring), new `fileCommandPauseTransfer.ts`/`fileCommandResumeTransfer.ts`
+  (Feature 5 pause/resume/stop),
   [src/modules/compareExplorer/treeDataProvider.ts](src/modules/compareExplorer/treeDataProvider.ts)
   (Feature 9 — nested folder nodes, `CompareNode` union, optional flatten setting),
   `src/extension.ts` (register compare explorer; thread `context.secrets` into config
@@ -874,7 +915,13 @@ here so it isn't forgotten.
    run `SFTP: Compare Folder` on a large tree and confirm a progress notification
    appears (indeterminate, or determinate if Feature 2 already landed) instead of only
    the blunt status-bar spinner; confirm other single-file operations (upload,
-   download, diff) are unaffected and keep the existing spinner-only behavior.
+   download, diff) are unaffected and keep the existing spinner-only behavior. **Pause/
+   resume/stop:** during a multi-file sync, click Pause on the status bar and confirm
+   the in-flight file finishes but no new file starts and the notification shows
+   "Paused"; click Resume and confirm the remaining queued files transfer; click Stop
+   (Cancel) instead and confirm queued files are dropped while any in-flight file still
+   finishes cleanly; confirm Pause/Resume controls only appear while a transfer is
+   actually running.
 
 8. **Password security (Feature 6):** set a profile password via the new command,
    confirm it's stored in `SecretStorage` and absent (or masked) from `sftp.json` on
@@ -929,7 +976,11 @@ here so it isn't forgotten.
   weaker UX) or waits for Feature 2's scheduler integration so both features land
   together with a determinate bar; whether to centralize `withProgress` into
   `createFileHandler` now or keep it local to the two call sites to minimize diff
-  surface on a shared file.
+  surface on a shared file; whether Pause/Resume needs a global "pause everything"
+  control or per-profile/per-scheduler pause is enough (today's `_transferSchedulers`
+  is a flat list per `FileService`, i.e. per profile); whether a paused-and-abandoned
+  transfer should auto-resume or auto-cancel after some idle timeout, versus staying
+  paused indefinitely until the user acts.
 - Feature 6: UX for the plaintext→SecretStorage migration prompt (auto vs. opt-in);
   whether to support a team-shared secret path at all, or explicitly document
   SecretStorage as single-machine and rely on Feature 7 (relocated, per-machine config)

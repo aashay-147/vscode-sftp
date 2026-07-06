@@ -64,9 +64,9 @@ _Nothing in active development right now._
 - **Upload/Download diff-only transfer** — skip files already identical on the
   destination during explicit upload/download, the way `Sync` already does, to cut
   needless transfer time.
-- **Progress indication for compare & sync** — a real, cancellable progress
-  notification for these two multi-file operations, in place of the current
-  blunt status-bar spinner.
+- **Progress indication for compare & sync** — a real progress notification for
+  these two multi-file operations, with pause/resume/stop controls, in place of
+  the current blunt status-bar spinner.
 - **Password security in config** — move stored passwords out of plaintext
   `.vscode/sftp.json` and into VS Code's `SecretStorage`, with a migration path for
   existing configs.
