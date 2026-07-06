@@ -68,6 +68,15 @@ export const COMMAND_COMPARE_STAMP_FROM_REMOTE = 'sftp.compare.stampFromRemote';
 // stamp remote mtime from local (remote adopts the local timestamp)
 export const COMMAND_COMPARE_STAMP_FROM_LOCAL = 'sftp.compare.stampFromLocal';
 
+// group-header (whole-category) actions in the folder-compare view
+export const COMMAND_COMPARE_GROUP_DOWNLOAD = 'sftp.compare.group.download';
+export const COMMAND_COMPARE_GROUP_UPLOAD = 'sftp.compare.group.upload';
+export const COMMAND_COMPARE_GROUP_STAMP_FROM_REMOTE = 'sftp.compare.group.stampFromRemote';
+export const COMMAND_COMPARE_GROUP_STAMP_FROM_LOCAL = 'sftp.compare.group.stampFromLocal';
+// destructive: mirror-delete the orphan side of a one-sided group (guarded by a modal confirm)
+export const COMMAND_COMPARE_GROUP_DELETE_REMOTE = 'sftp.compare.group.deleteRemote';
+export const COMMAND_COMPARE_GROUP_DELETE_LOCAL = 'sftp.compare.group.deleteLocal';
+
 export const COMMAND_REMOTEEXPLORER_REFRESH = 'sftp.remoteExplorer.refresh';
 export const COMMAND_REMOTEEXPLORER_REFRESH_ACTIVE_FILE = "sftp.remoteExplorer.refreshActiveFile"
 export const COMMAND_REMOTEEXPLORER_EDITINLOCAL = 'sftp.remoteExplorer.editInLocal';

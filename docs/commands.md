@@ -61,6 +61,29 @@ Stop the current transfers (upload and download).
 Open a terminal in VSCode and auto login to a specific server.
 
 
+## Folder Compare — group actions
+
+These commands appear only on a **group header** in the Folder Compare view (not in the command palette). They act on every file in that status group and refresh the comparison once when done. Destructive actions prompt with a modal confirmation.
+
+### Download from Remote (`sftp.compare.group.download`)
+Download every file in the group (New Remote / Modified), overwriting the local copy. On a Modified group this overwrites local content and asks to confirm first.
+
+### Upload to Remote (`sftp.compare.group.upload`)
+Upload every file in the group (New Local / Modified), overwriting the remote copy. On a Modified group this overwrites remote content and asks to confirm first.
+
+### Match Timestamp — Use Remote (`sftp.compare.group.stampFromRemote`)
+For a Timestamp Only group, set each local file's modification time to match the remote. No content is transferred.
+
+### Match Timestamp — Use Local (`sftp.compare.group.stampFromLocal`)
+For a Timestamp Only group, set each remote file's modification time to match the local. No content is transferred.
+
+### Delete on Remote (`sftp.compare.group.deleteRemote`)
+Permanently delete every New Remote file from the server. Modal confirmation required.
+
+### Delete Locally (`sftp.compare.group.deleteLocal`)
+Permanently delete every New Local file from disk. Modal confirmation required.
+
+
 ## Alt commands
 An alternative command can be found when pressing `Alt` while opening a menu.
 

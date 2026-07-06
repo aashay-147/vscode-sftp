@@ -1,11 +1,14 @@
 import * as path from 'path';
 import { Uri, window } from 'vscode';
 import { FileType } from '../core';
+import app from '../app';
+import { COMMAND_COMPARE_REFRESH } from '../constants';
 import { getAllFileService } from '../modules/serviceManager';
 import { ExplorerItem } from '../modules/remoteExplorer';
-import { CompareItem } from '../modules/compareExplorer';
-import { getActiveTextEditor } from '../host';
-import { listFiles, toLocalPath, simplifyPath } from '../helper';
+import { CompareItem, CompareNode } from '../modules/compareExplorer';
+import { CompareEntry } from '../fileHandlers/compare';
+import { executeCommand, getActiveTextEditor } from '../host';
+import { listFiles, toLocalPath, simplifyPath, reportError } from '../helper';
 
 function configIngoreFilterCreator(config) {
   if (!config || !config.ignore) {
@@ -166,6 +169,42 @@ export function uriFromCompareItem(item: CompareItem): Uri | undefined {
   }
 
   return Uri.file(item.entry.localFsPath);
+}
+
+// All entries belonging to a folder-compare group header, pulled from the live
+// compare result. Group nodes only carry their status, so the entries are
+// resolved from the tree's last result rather than the node itself.
+export function compareGroupEntries(node: CompareNode): CompareEntry[] {
+  if (!node || node.kind !== 'group') {
+    return [];
+  }
+
+  const result = app.compareExplorer && app.compareExplorer.lastResult;
+  if (!result) {
+    return [];
+  }
+
+  return result.entries.filter(entry => entry.status === node.status);
+}
+
+// Run a per-file handler across every entry of a compare group, then refresh
+// once. Sequential on purpose: FTP serializes on a single control connection
+// (PQueue concurrency 1), so parallelism buys nothing and N parallel refreshes
+// would each re-walk both trees. Per-file errors are reported but don't abort
+// the rest of the batch.
+export async function runCompareGroup(
+  entries: CompareEntry[],
+  run: (uri: Uri) => Promise<unknown>
+): Promise<void> {
+  for (const entry of entries) {
+    try {
+      await run(Uri.file(entry.localFsPath));
+    } catch (error) {
+      reportError(error);
+    }
+  }
+
+  await executeCommand(COMMAND_COMPARE_REFRESH);
 }
 
 // selected file from all remote files

@@ -1,3 +1,9 @@
+## 1.17.0 - 2026-07-07
+* New Feature : Folder Compare view — compare a local folder against its remote counterpart, grouped into Modified / Timestamp Only / New Remote / New Local with click-to-diff and per-entry download/upload/timestamp actions.
+* New Feature : Folder Compare group (whole-category) actions — right-click a group header to Download from Remote, Upload to Remote, Match Timestamp (Use Remote/Local), Delete on Remote, or Delete Locally for every file in the group at once. Destructive and overwriting actions require a modal confirmation.
+* Fix : FTP timestamp comparison — modification-time comparison is skipped on FTP (LIST mtimes are unreliable), so the Timestamp Only group no longer over-reports on FTP connections.
+* Fix : Remote Explorer folder commands (Upload/Download Folder) no longer leak onto Folder Compare group headers ("missing targets" error).
+
 ## 1.16.3 - 2023-06-16
 * [#356] New Feature : Upload to all profiles (Pull request [#313](https://github.com/Natizyskunk/vscode-sftp/pull/313) from @wewawa vscode-sftp:create_multi_command).
 * [#357] Fix : Correcting Typo 'avaliable' => 'available' (Pull request [#343](https://github.com/Natizyskunk/vscode-sftp/pull/343) from @kjo-sdds vscode-sftp:develop).

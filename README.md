@@ -48,6 +48,9 @@ in [.planning/fork-sftp-plan.md](.planning/fork-sftp-plan.md).
 
 - **Folder Compare** — compare a local folder against its remote counterpart; see
   [Folder Compare](#folder-compare) below.
+- **Folder Compare group actions** — right-click a group header to download, upload,
+  match timestamps, or delete every file in that category at once, with modal confirms
+  for destructive/overwriting actions.
 
 ### 🚧 In progress
 
@@ -75,6 +78,8 @@ _Nothing in active development right now._
 - **Configurable download location** — a per-profile `downloadPath` so explicit
   downloads land outside the working `context` folder, preserving the remote-relative
   subpath.
+- **Clear Compare** — a button to reset the Folder Compare view back to empty on
+  demand, instead of a stale result sitting there until the next re-compare.
 - **Settings GUI** — a webview-based settings editor for `sftp.json` (deferred, no
   timeline yet).
 
@@ -326,15 +331,29 @@ In sftp.json:
 
 Compare a local folder with its remote counterpart and see, per file, what differs:
 
-- **Modified** — exists on both sides but differs (same size + modification time test the `Sync` commands use).
+- **Modified** — exists on both sides but the content differs (size differs, or same size with a differing modification time).
+- **Timestamp Only** — identical size but the modification time differs. On FTP this is skipped (LIST mtimes are unreliable), so the group only appears for SFTP.
 - **New Remote** — exists only on the remote.
 - **New Local** — exists only locally.
 
 How to use it:
 
 1. Right-click a folder in the explorer (or a folder in the Remote Explorer) and pick `SFTP: Compare Folder with Remote`, or run `SFTP: Compare Active Folder with Remote` from the command palette.
-2. The **Folder Compare** view in the SFTP activity bar container shows the three groups. `ignore` rules from your config apply.
-3. Click a _Modified_ entry to open a diff. Use the inline actions to download (_New Remote_, _Modified_) or upload (_New Local_, _Modified_) an entry; the comparison re-runs afterwards. The refresh button re-runs the comparison at any time.
+2. The **Folder Compare** view in the SFTP activity bar container shows the groups above (empty groups are hidden). `ignore` rules from your config apply.
+3. Click a _Modified_ or _Timestamp Only_ entry to open a diff. Use the per-entry inline actions to download, upload, or match-timestamp an entry; the comparison re-runs afterwards. The refresh button re-runs the comparison at any time.
+
+### Group (whole-category) actions
+
+Right-click a **group header** to act on every file in that category at once. The offered actions are context-aware, and the destructive ones require a modal confirmation naming the file count:
+
+| Group | Actions |
+| --- | --- |
+| **Modified** | **Download from Remote** / **Upload to Remote** — overwrite one side with the other (confirm; cannot be undone). |
+| **Timestamp Only** | **Match Timestamp (Use Remote)** / **Match Timestamp (Use Local)** — align mtimes without transferring content (no confirm). |
+| **New Remote** | **Download from Remote** — pull all remote-only files locally. **Delete on Remote** — remove them from the server (confirm). |
+| **New Local** | **Upload to Remote** — push all local-only files. **Delete Locally** — remove them from disk (confirm). |
+
+Files are processed sequentially (FTP serializes on a single control connection), then the comparison refreshes once.
 
 _Note:_ with a non-zero `remoteTimeOffsetInHours` the _Modified_ group may over-report changes (known upstream time-offset round-trip issue).
 

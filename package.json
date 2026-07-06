@@ -2,7 +2,7 @@
   "name": "sftp",
   "displayName": "SFTP",
   "description": "SFTP/FTP sync",
-  "version": "1.16.3",
+  "version": "1.17.0",
   "publisher": "Natizyskunk",
   "author": "Natizyskunk <natan.fourie@hotmail.fr> (https://github.com/Natizyskunk)",
   "engines": {
@@ -349,6 +349,42 @@
         "title": "Match Timestamp (Use Local)",
         "category": "SFTP",
         "icon": "$(history)"
+      },
+      {
+        "command": "sftp.compare.group.download",
+        "title": "Download from Remote",
+        "category": "SFTP",
+        "icon": "$(cloud-download)"
+      },
+      {
+        "command": "sftp.compare.group.upload",
+        "title": "Upload to Remote",
+        "category": "SFTP",
+        "icon": "$(cloud-upload)"
+      },
+      {
+        "command": "sftp.compare.group.stampFromRemote",
+        "title": "Match Timestamp (Use Remote)",
+        "category": "SFTP",
+        "icon": "$(history)"
+      },
+      {
+        "command": "sftp.compare.group.stampFromLocal",
+        "title": "Match Timestamp (Use Local)",
+        "category": "SFTP",
+        "icon": "$(history)"
+      },
+      {
+        "command": "sftp.compare.group.deleteRemote",
+        "title": "Delete on Remote",
+        "category": "SFTP",
+        "icon": "$(trash)"
+      },
+      {
+        "command": "sftp.compare.group.deleteLocal",
+        "title": "Delete Locally",
+        "category": "SFTP",
+        "icon": "$(trash)"
       }
     ],
     "menus": {
@@ -536,6 +572,30 @@
         {
           "command": "sftp.compare.stampFromLocal",
           "when": "false"
+        },
+        {
+          "command": "sftp.compare.group.download",
+          "when": "false"
+        },
+        {
+          "command": "sftp.compare.group.upload",
+          "when": "false"
+        },
+        {
+          "command": "sftp.compare.group.stampFromRemote",
+          "when": "false"
+        },
+        {
+          "command": "sftp.compare.group.stampFromLocal",
+          "when": "false"
+        },
+        {
+          "command": "sftp.compare.group.deleteRemote",
+          "when": "false"
+        },
+        {
+          "command": "sftp.compare.group.deleteLocal",
+          "when": "false"
         }
       ],
       "explorer/context": [
@@ -686,7 +746,7 @@
           "command": "sftp.upload.folder",
           "group": "3_trans@1",
           "alt": "sftp.forceUpload",
-          "when": "sftp.enabled && viewItem != file"
+          "when": "sftp.enabled && view == remoteExplorer && viewItem != file"
         },
         {
           "command": "sftp.upload.file",
@@ -697,7 +757,7 @@
           "command": "sftp.upload.folder.to.allProfiles",
           "group": "3_trans@1",
           "alt": "sftp.forceUpload.to.allProfiles",
-          "when": "sftp.enabled && viewItem != file"
+          "when": "sftp.enabled && view == remoteExplorer && viewItem != file"
         },
         {
           "command": "sftp.upload.file.to.allProfiles",
@@ -708,7 +768,7 @@
           "command": "sftp.download.folder",
           "group": "3_trans@2",
           "alt": "sftp.forceDownload",
-          "when": "sftp.enabled && viewItem != file"
+          "when": "sftp.enabled && view == remoteExplorer && viewItem != file"
         },
         {
           "command": "sftp.download.file",
@@ -789,6 +849,71 @@
           "command": "sftp.compare.stampFromLocal",
           "group": "1_action@5",
           "when": "view == sftpCompare && viewItem == compareItem-timeDiff"
+        },
+        {
+          "command": "sftp.compare.group.download",
+          "group": "inline@1",
+          "when": "view == sftpCompare && viewItem == compareGroup-newRemote"
+        },
+        {
+          "command": "sftp.compare.group.download",
+          "group": "1_group@1",
+          "when": "view == sftpCompare && viewItem == compareGroup-newRemote"
+        },
+        {
+          "command": "sftp.compare.group.deleteRemote",
+          "group": "9_group@1",
+          "when": "view == sftpCompare && viewItem == compareGroup-newRemote"
+        },
+        {
+          "command": "sftp.compare.group.upload",
+          "group": "inline@1",
+          "when": "view == sftpCompare && viewItem == compareGroup-newLocal"
+        },
+        {
+          "command": "sftp.compare.group.upload",
+          "group": "1_group@1",
+          "when": "view == sftpCompare && viewItem == compareGroup-newLocal"
+        },
+        {
+          "command": "sftp.compare.group.deleteLocal",
+          "group": "9_group@1",
+          "when": "view == sftpCompare && viewItem == compareGroup-newLocal"
+        },
+        {
+          "command": "sftp.compare.group.download",
+          "group": "inline@1",
+          "when": "view == sftpCompare && viewItem == compareGroup-modified"
+        },
+        {
+          "command": "sftp.compare.group.upload",
+          "group": "inline@2",
+          "when": "view == sftpCompare && viewItem == compareGroup-modified"
+        },
+        {
+          "command": "sftp.compare.group.download",
+          "group": "1_group@1",
+          "when": "view == sftpCompare && viewItem == compareGroup-modified"
+        },
+        {
+          "command": "sftp.compare.group.upload",
+          "group": "1_group@2",
+          "when": "view == sftpCompare && viewItem == compareGroup-modified"
+        },
+        {
+          "command": "sftp.compare.group.stampFromRemote",
+          "group": "inline@1",
+          "when": "view == sftpCompare && viewItem == compareGroup-timeDiff"
+        },
+        {
+          "command": "sftp.compare.group.stampFromRemote",
+          "group": "1_group@1",
+          "when": "view == sftpCompare && viewItem == compareGroup-timeDiff"
+        },
+        {
+          "command": "sftp.compare.group.stampFromLocal",
+          "group": "1_group@2",
+          "when": "view == sftpCompare && viewItem == compareGroup-timeDiff"
         }
       ],
       "scm/title": [
@@ -859,6 +984,7 @@
     "@types/node": "^9.6.51",
     "@types/vscode": "1.40",
     "@types/webpack-env": "^1.13.6",
+    "@vscode/vsce": "^3.9.2",
     "braces": ">=2.3.1",
     "glob-parent": ">=5.1.2",
     "jest": "^29.0.3",
