@@ -63,6 +63,10 @@ export const COMMAND_COMPARE_REFRESH = 'sftp.compare.refresh';
 export const COMMAND_COMPARE_DIFF = 'sftp.compare.diff';
 export const COMMAND_COMPARE_DOWNLOAD = 'sftp.compare.download';
 export const COMMAND_COMPARE_UPLOAD = 'sftp.compare.upload';
+// stamp local mtime from remote (local adopts the remote timestamp)
+export const COMMAND_COMPARE_STAMP_FROM_REMOTE = 'sftp.compare.stampFromRemote';
+// stamp remote mtime from local (remote adopts the local timestamp)
+export const COMMAND_COMPARE_STAMP_FROM_LOCAL = 'sftp.compare.stampFromLocal';
 
 export const COMMAND_REMOTEEXPLORER_REFRESH = 'sftp.remoteExplorer.refresh';
 export const COMMAND_REMOTEEXPLORER_REFRESH_ACTIVE_FILE = "sftp.remoteExplorer.refreshActiveFile"

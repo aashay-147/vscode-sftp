@@ -17,18 +17,21 @@ export type CompareNode = CompareGroup | CompareItem;
 
 const GROUPS: CompareGroup[] = [
   { kind: 'group', status: CompareStatus.Modified, label: 'Modified' },
+  { kind: 'group', status: CompareStatus.TimeDiff, label: 'Timestamp Only' },
   { kind: 'group', status: CompareStatus.NewRemote, label: 'New Remote' },
   { kind: 'group', status: CompareStatus.NewLocal, label: 'New Local' },
 ];
 
 const GROUP_ICONS = {
   [CompareStatus.Modified]: 'diff-modified',
+  [CompareStatus.TimeDiff]: 'history',
   [CompareStatus.NewRemote]: 'cloud-download',
   [CompareStatus.NewLocal]: 'cloud-upload',
 };
 
 const STATUS_LABELS = {
   [CompareStatus.Modified]: 'Modified',
+  [CompareStatus.TimeDiff]: 'Timestamp Only',
   [CompareStatus.NewRemote]: 'New Remote',
   [CompareStatus.NewLocal]: 'New Local',
 };
@@ -76,7 +79,9 @@ export default class CompareTreeDataProvider implements vscode.TreeDataProvider<
       entry.localFsPath
     }\nremote: ${entry.remoteFsPath}`;
     treeItem.contextValue = `compareItem-${entry.status}`;
-    if (entry.status === CompareStatus.Modified) {
+    // both Modified and TimeDiff open a diff on click — for TimeDiff it lets the
+    // user confirm the content really is identical (an empty diff).
+    if (entry.status === CompareStatus.Modified || entry.status === CompareStatus.TimeDiff) {
       treeItem.command = {
         command: COMMAND_COMPARE_DIFF,
         title: 'Diff with Remote',
