@@ -63,7 +63,9 @@ export default class CompareTreeDataProvider implements vscode.TreeDataProvider<
       // @types/vscode is pinned to 1.40, which predates the public ThemeIcon(id)
       // constructor (1.51); the runtime always has it (engines require >= 1.64)
       treeItem.iconPath = new (vscode.ThemeIcon as any)(GROUP_ICONS[node.status]);
-      treeItem.contextValue = 'compareGroup';
+      // per-status contextValue drives which group actions the menu offers
+      // (see the compareGroup-* when-clauses in package.json).
+      treeItem.contextValue = `compareGroup-${node.status}`;
       return treeItem;
     }
 

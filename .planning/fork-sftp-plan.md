@@ -86,6 +86,10 @@ existing, actively-maintained base:
    the compare tree by folder instead of listing every file flat under each status
    group.
 
+10. **Clear Compare** — a command/button to reset the Folder Compare view back to
+    empty, discarding the current comparison result instead of leaving a stale diff
+    on screen until the next re-compare.
+
 ### Key research finding (changes the original premise)
 
 The user originally wanted to build on `thebestbradley/vscode-sftp-plus` for its
@@ -326,6 +330,35 @@ auto-loader picks them up; add ids to `package.json` `contributes.commands` + `m
 
 - Command palette + explorer/remoteExplorer context-menu entries and item inline actions
   (download/upload/diff) via `contributes.menus` `view/item/context`.
+
+### 1a — Group-header (whole-category) actions *(shipped, v1.17.0)*
+
+**Goal:** right-click a group header to act on every file in that status group at once,
+with context-aware options and modal confirmations for destructive/overwriting actions.
+
+- New status **Timestamp Only** (`CompareStatus.TimeDiff`) split out of Modified:
+  identical size, differing mtime. Skipped on FTP (`compareMtime = protocol !== 'ftp'`
+  — LIST mtimes are unreliable), so the group is SFTP-only.
+- Per-status `contextValue` on group tree items (`compareGroup-<status>`) drives which
+  actions the menu offers (see the `view/item/context` `when` clauses in `package.json`).
+- Six new generic commands (`src/commands/commandCompareGroup*.ts`, auto-registered as
+  `createCommand` so the handler receives the clicked group node directly):
+  `sftp.compare.group.download`, `.upload`, `.stampFromRemote`, `.stampFromLocal`,
+  `.deleteRemote`, `.deleteLocal`.
+  - Modified → Download / Upload (both, modal "overwrite" confirm).
+  - Timestamp Only → Match Timestamp (Use Remote / Use Local), no confirm.
+  - New Remote → Download; Delete on Remote (modal confirm).
+  - New Local → Upload; Delete Locally (modal confirm).
+- Shared helpers in `src/commands/shared.ts`: `compareGroupEntries(node)` resolves the
+  group's live entries from `app.compareExplorer.lastResult`; `runCompareGroup(entries, run)`
+  runs `run(uri)` **sequentially** (FTP single control connection — PQueue concurrency 1),
+  reports per-file errors, then fires one `COMMAND_COMPARE_REFRESH`.
+- New `src/fileHandlers/remove.ts` `removeLocal` (local-fs mirror of `removeRemote`) backs
+  Delete Locally; `showConfirmMessageModal` in `src/host.ts` provides the blocking warning modal.
+- **Bug fixed:** the three Remote Explorer folder commands (`sftp.upload.folder`,
+  `sftp.upload.folder.to.allProfiles`, `sftp.download.folder`) leaked onto compare group
+  headers and logged *"…command get canceled because of missing targets."* Their `when`
+  clauses gained a `view == remoteExplorer` guard.
 
 ---
 
@@ -816,6 +849,67 @@ signal.
 
 ---
 
+## Feature 10 — Clear Compare
+
+**Goal:** a way to reset the Folder Compare view back to empty on demand, instead of
+the current comparison result sitting on screen indefinitely until the user re-runs
+`SFTP: Compare Folder`/`Refresh` against a (possibly now-irrelevant) folder pair.
+
+**Current state:** the reset primitive already exists, it's just never exposed to the
+user. `CompareExplorer.setResult(null)` ([explorer.ts:28-33](src/modules/compareExplorer/explorer.ts#L28-L33))
+already fully clears the tree — it calls
+`CompareTreeDataProvider.setResult(null)` ([treeDataProvider.ts:51-54](src/modules/compareExplorer/treeDataProvider.ts#L51-L54)),
+which sets `_result = null` and fires `onDidChangeTreeData`, collapsing `getChildren()`
+([treeDataProvider.ts:96-106](src/modules/compareExplorer/treeDataProvider.ts#L96-L106))
+back to an empty group list (since `_entriesOf()` returns `[]` for a null result,
+[treeDataProvider.ts:108-113](src/modules/compareExplorer/treeDataProvider.ts#L108-L113)),
+and also clears the header message back to `undefined`
+([explorer.ts:30-32](src/modules/compareExplorer/explorer.ts#L30-L32)) — that's already
+exactly the empty state shown before any compare has run, which falls through to the
+existing `viewsWelcome` entry for `sftpCompare` (`package.json:60-64`). But nothing in
+the codebase ever calls `setResult(null)` — the only caller of `setResult()` is
+`compareFolders()` writing a fresh result (`compare.ts:121-128`), and the only registered
+compare command that isn't a per-item/per-group action is `sftp.compare.refresh`
+(`COMMAND_COMPARE_REFRESH`, [constants.ts:62](src/constants.ts#L62)), which **re-runs**
+the last comparison ([explorer.ts:35-46](src/modules/compareExplorer/explorer.ts#L35-L46))
+rather than clearing it. There is no "Clear" command, no title-bar button for it, and
+no `contributes.commands` entry.
+
+**Changes:**
+
+1. **New command** `sftp.compare.clear` — add to
+   [src/constants.ts](src/constants.ts) alongside `COMMAND_COMPARE_REFRESH`
+   (`constants.ts:62`), register it in `CompareExplorer`'s constructor
+   ([explorer.ts:12-22](src/modules/compareExplorer/explorer.ts#L12-L22)) next to the
+   existing `registerCommand(context, COMMAND_COMPARE_REFRESH, ...)` call, calling
+   `this.setResult(null)` (the public method already on the class,
+   [explorer.ts:28-33](src/modules/compareExplorer/explorer.ts#L28-L33)) — no new
+   clearing logic needed, just a command wired to what's already there.
+2. **package.json** — add `sftp.compare.clear` to `contributes.commands`
+   (mirroring the `sftp.compare.refresh` entry, `package.json:318-321`) and a second
+   `view/title` button next to Refresh (mirroring `package.json:719-722`, same
+   `"when": "view == sftpCompare"`, `"group": "navigation"`) so Clear and Refresh sit
+   side by side in the compare view's title bar.
+3. **Guard against a no-op flicker.** `_refresh()` already early-returns when there's
+   no result (`explorer.ts:36-39`); mirror that in the new command by simply calling
+   `setResult(null)` unconditionally — it's idempotent (`_result` is already `null` and
+   `_explorerView.message` already `undefined` on a second call), so no extra guard
+   is actually required, unlike `_refresh()` which would otherwise re-run a compare
+   against nothing.
+4. **Docs** — README note on the Clear button next to the existing Refresh
+   description in the Folder Compare section.
+
+**Edge cases:** clearing mid-comparison (if a compare is still running when Clear is
+invoked) should not fight with the in-flight `compareFolders()` call's own
+`setResult()` — since JS is single-threaded and `compareFolders` is a single `await
+Promise.all(...)` followed by one synchronous `setResult()` call
+(`compare.ts:83-128`), whichever finishes last simply wins with no partial/torn state,
+matching how `Refresh` already behaves today under the same interleaving. No
+confirmation prompt needed — clearing is non-destructive (it only discards an
+in-memory tree, not files on disk).
+
+---
+
 ## Phase 3 (deferred) — Settings GUI
 
 Out of scope for this pass (user chose "GUI later"). When revisited: a webview panel
@@ -859,6 +953,9 @@ here so it isn't forgotten.
   (Feature 5 pause/resume/stop),
   [src/modules/compareExplorer/treeDataProvider.ts](src/modules/compareExplorer/treeDataProvider.ts)
   (Feature 9 — nested folder nodes, `CompareNode` union, optional flatten setting),
+  [src/modules/compareExplorer/explorer.ts](src/modules/compareExplorer/explorer.ts)
+  (Feature 10 — register `sftp.compare.clear`), `src/constants.ts` (Feature 10 —
+  `COMMAND_COMPARE_CLEAR`),
   `src/extension.ts` (register compare explorer; thread `context.secrets` into config
   module), README.
 
@@ -949,7 +1046,14 @@ here so it isn't forgotten.
    unchanged; if a flatten toggle ships, confirm switching it reproduces today's flat
    view exactly.
 
-12. **Regression:** `npm test` stays at 41/42 or better; smoke-test existing
+12. **Clear Compare (Feature 10):** run a compare, confirm results populate; click
+   Clear and confirm the tree empties back to the `viewsWelcome` prompt and the header
+   message disappears; confirm Clear is a no-op (no error, no flicker) when clicked
+   with nothing compared yet; confirm Refresh still works normally afterward (it
+   re-runs against the last root, unaffected by Clear having been used earlier in the
+   session).
+
+13. **Regression:** `npm test` stays at 41/42 or better; smoke-test existing
    upload/download/diff/sync.
 
 13. **Upstream hygiene:** `git diff upstream/develop` stays additive/modular; each
@@ -993,6 +1097,9 @@ here so it isn't forgotten.
   extra clicks to expand; ship behind a toggle (default off, or a quick user survey)
   rather than replacing the current view outright if there's any doubt it's an
   improvement.
+- Feature 10: whether Clear should also live in the command palette (not just the
+  title-bar button) for keyboard-driven users — cheap to add alongside the button
+  since it's the same command id either way.
 
 - Upstream PRs to file from the baseline repairs: createCommand import fix, paths.ts
   revert (or a properly typed re-do of the casing fix), Jest preprocessor fix, and the

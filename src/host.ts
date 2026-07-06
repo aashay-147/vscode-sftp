@@ -97,6 +97,13 @@ export async function showConfirmMessage(
   return Boolean(result && result.title === confirmLabel);
 }
 
+// Modal (blocking) confirmation for destructive/irreversible actions. Unlike
+// showConfirmMessage this uses a warning modal the user must explicitly dismiss.
+export async function showConfirmMessageModal(message: string, confirmLabel: string = 'Yes') {
+  const result = await vscode.window.showWarningMessage(message, { modal: true }, confirmLabel);
+  return result === confirmLabel;
+}
+
 export function showOpenDialog(options: vscode.OpenDialogOptions) {
   return vscode.window.showOpenDialog(options);
 }
