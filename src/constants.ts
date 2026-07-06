@@ -57,6 +57,13 @@ export const COMMAND_DELETE_REMOTE = 'sftp.delete.remote';
 export const COMMAND_REVEAL_IN_EXPLORER = 'sftp.revealInExplorer';
 export const COMMAND_REVEAL_IN_REMOTE_EXPLORER = 'sftp.revealInRemoteExplorer';
 
+export const COMMAND_COMPARE_FOLDER = 'sftp.compareFolder';
+export const COMMAND_COMPARE_ACTIVEFOLDER = 'sftp.compareActiveFolder';
+export const COMMAND_COMPARE_REFRESH = 'sftp.compare.refresh';
+export const COMMAND_COMPARE_DIFF = 'sftp.compare.diff';
+export const COMMAND_COMPARE_DOWNLOAD = 'sftp.compare.download';
+export const COMMAND_COMPARE_UPLOAD = 'sftp.compare.upload';
+
 export const COMMAND_REMOTEEXPLORER_REFRESH = 'sftp.remoteExplorer.refresh';
 export const COMMAND_REMOTEEXPLORER_REFRESH_ACTIVE_FILE = "sftp.remoteExplorer.refreshActiveFile"
 export const COMMAND_REMOTEEXPLORER_EDITINLOCAL = 'sftp.remoteExplorer.editInLocal';
