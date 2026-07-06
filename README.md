@@ -34,9 +34,55 @@ VSCode-SFTP enables you to add, edit or delete files within a local directory an
   - Multiple configurations
   - Switchable profiles
   - Temp File support
+- [Roadmap](#roadmap)
 - [Commands](https://github.com/Natizyskunk/vscode-sftp/wiki/Commands)
 - [Debug](#debug)
 - [FAQ](#FAQ)
+
+## Roadmap
+
+Status of the features being built on top of upstream in this fork. See the full plan
+in [.planning/fork-sftp-plan.md](.planning/fork-sftp-plan.md).
+
+### ✅ Shipped
+
+- **Folder Compare** — compare a local folder against its remote counterpart; see
+  [Folder Compare](#folder-compare) below.
+
+### 🚧 In progress
+
+_Nothing in active development right now._
+
+### 📋 Upcoming
+
+- **Multi-threaded / parallel upload, download & checks** — pool multiple SFTP
+  connections per profile instead of serializing every transfer over one channel, and
+  bring folder-compare's directory walk under the same concurrency control.
+- **Upload/Download overwrite confirmation** — a per-profile-overrideable prompt
+  before an explicit upload/download overwrites an existing destination file, instead
+  of today's silent one-click overwrite.
+- **Upload/Download diff-only transfer** — skip files already identical on the
+  destination during explicit upload/download, the way `Sync` already does, to cut
+  needless transfer time.
+- **Progress indication for compare & sync** — a real, cancellable progress
+  notification for these two multi-file operations, in place of the current
+  blunt status-bar spinner.
+- **Password security in config** — move stored passwords out of plaintext
+  `.vscode/sftp.json` and into VS Code's `SecretStorage`, with a migration path for
+  existing configs.
+- **Custom location for the SFTP config file** — a `sftp.configPath` setting so the
+  config can live outside `.vscode/` (or outside the repo entirely).
+- **Configurable download location** — a per-profile `downloadPath` so explicit
+  downloads land outside the working `context` folder, preserving the remote-relative
+  subpath.
+- **Settings GUI** — a webview-based settings editor for `sftp.json` (deferred, no
+  timeline yet).
+
+### 🤔 Under consideration
+
+- **Folder Compare view: show subfolders** — nest the compare tree by folder instead
+  of a flat file list per status group. Speculative — being validated before it's
+  built, since the current flat view already shows subfolder context.
 
 ## Installation
 
