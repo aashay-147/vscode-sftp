@@ -58,18 +58,20 @@ _Nothing in active development right now._
 
 ### 📋 Upcoming
 
-- **Multi-threaded / parallel upload, download & checks** — pool multiple SFTP
-  connections per profile instead of serializing every transfer over one channel, and
-  bring folder-compare's directory walk under the same concurrency control.
 - **Upload/Download overwrite confirmation** — a per-profile-overrideable prompt
   before an explicit upload/download overwrites an existing destination file, instead
   of today's silent one-click overwrite.
 - **Upload/Download diff-only transfer** — skip files already identical on the
   destination during explicit upload/download, the way `Sync` already does, to cut
   needless transfer time.
+- **Multi-threaded / parallel upload, download & checks** — pool multiple SFTP
+  connections per profile instead of serializing every transfer over one channel, and
+  bring folder-compare's directory walk under the same concurrency control.
 - **Progress indication for compare & sync** — a real progress notification for
   these two multi-file operations, with pause/resume/stop controls, in place of
   the current blunt status-bar spinner.
+- **Clear Compare** — a button to reset the Folder Compare view back to empty on
+  demand, instead of a stale result sitting there until the next re-compare.
 - **Password security in config** — move stored passwords out of plaintext
   `.vscode/sftp.json` and into VS Code's `SecretStorage`, with a migration path for
   existing configs.
@@ -78,8 +80,6 @@ _Nothing in active development right now._
 - **Configurable download location** — a per-profile `downloadPath` so explicit
   downloads land outside the working `context` folder, preserving the remote-relative
   subpath.
-- **Clear Compare** — a button to reset the Folder Compare view back to empty on
-  demand, instead of a stale result sitting there until the next re-compare.
 - **Settings GUI** — a webview-based settings editor for `sftp.json` (deferred, no
   timeline yet).
 
