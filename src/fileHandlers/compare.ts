@@ -1,8 +1,10 @@
 import * as path from 'path';
+import { Uri } from 'vscode';
 import app from '../app';
-import { upath, FileSystem, FileEntry, FileType } from '../core';
+import { upath, FileSystem, FileEntry, FileStats, FileService, FileType } from '../core';
+import { reportError } from '../helper';
 import { FileHandleOption } from './option';
-import createFileHandler from './createFileHandler';
+import createFileHandler, { handleCtxFromUri, FileHandlerContext } from './createFileHandler';
 
 export enum CompareStatus {
   NewLocal = 'newLocal',
@@ -22,10 +24,17 @@ export interface CompareEntry {
   status: CompareStatus;
 }
 
+// How the current result was produced, so Refresh re-runs the SAME scope
+// instead of silently widening a file selection into a full folder walk.
+export type CompareOrigin =
+  | { kind: 'folder'; root: string }
+  | { kind: 'files'; uris: string[] };
+
 export interface CompareResult {
   localRoot: string;
   remoteRoot: string;
   serviceName?: string;
+  origin: CompareOrigin;
   entries: CompareEntry[];
 }
 
@@ -46,7 +55,7 @@ export interface CompareResult {
 // files are treated as unchanged. (A same-length in-place edit is therefore
 // not detected over FTP — the price of not trusting FTP mtimes. Trigger a
 // content diff explicitly to confirm such a file.)
-function diffStatus(a: FileEntry, b: FileEntry, compareMtime: boolean): CompareStatus | null {
+export function diffStatus(a: FileStats, b: FileStats, compareMtime: boolean): CompareStatus | null {
   if (a.size !== b.size) {
     return CompareStatus.Modified;
   }
@@ -54,6 +63,66 @@ function diffStatus(a: FileEntry, b: FileEntry, compareMtime: boolean): CompareS
     return CompareStatus.TimeDiff;
   }
   return null;
+}
+
+// FTP LIST mtimes can't be trusted (see diffStatus) — compare on size only.
+export function deriveCompareMtime(config: { protocol?: string }): boolean {
+  return config.protocol !== 'ftp';
+}
+
+// Path/rel identity of one file across both sides, resolved from the config
+// context so it slots into the same groups/nesting as the folder walk.
+interface CompareLocation {
+  relPath: string;
+  localFsPath: string;
+  remoteFsPath: string;
+}
+
+// Classify one file from stats already known on each side (null == missing on
+// that side). Single source of truth for the New/Modified/TimeDiff/unchanged
+// decision, shared by the folder walk (which already holds both stats) and the
+// selected-file path (which lstats on demand) so the two can't drift.
+export function classifyPair(
+  local: FileStats | null,
+  remote: FileStats | null,
+  location: CompareLocation,
+  compareMtime: boolean
+): CompareEntry | null {
+  if (local && !remote) {
+    return { ...location, status: CompareStatus.NewLocal };
+  }
+  if (!local && remote) {
+    return { ...location, status: CompareStatus.NewRemote };
+  }
+  if (!local || !remote) {
+    return null;
+  }
+  const status = diffStatus(local, remote, compareMtime);
+  return status ? { ...location, status } : null;
+}
+
+async function lstatOrNull(fileSystem: FileSystem, fsPath: string): Promise<FileStats | null> {
+  try {
+    return await fileSystem.lstat(fsPath);
+  } catch (error) {
+    // absent on this side — the other side (if present) is "new" here
+    return null;
+  }
+}
+
+// lstat both sides (swallowing not-found) then classify. Used for an explicitly
+// selected file, where there's no pre-walked directory listing to draw from.
+export async function classifyFile(
+  localFs: FileSystem,
+  remoteFs: FileSystem,
+  location: CompareLocation,
+  compareMtime: boolean
+): Promise<CompareEntry | null> {
+  const [local, remote] = await Promise.all([
+    lstatOrNull(localFs, location.localFsPath),
+    lstatOrNull(remoteFs, location.remoteFsPath),
+  ]);
+  return classifyPair(local, remote, location, compareMtime);
 }
 
 async function collectFiles(
@@ -102,8 +171,7 @@ export const compareFolders = createFileHandler<FileHandleOption>({
     const localFs = this.fileService.getLocalFileSystem();
     const { localFsPath, remoteFsPath } = this.target;
 
-    // FTP LIST mtimes can't be trusted (see diffStatus) — compare on size only.
-    const compareMtime = this.config.protocol !== 'ftp';
+    const compareMtime = deriveCompareMtime(this.config);
 
     const localFiles = new Map<string, FileEntry>();
     const remoteFiles = new Map<string, FileEntry>();
@@ -115,34 +183,27 @@ export const compareFolders = createFileHandler<FileHandleOption>({
     const entries: CompareEntry[] = [];
     localFiles.forEach((localEntry, relPath) => {
       const remoteEntry = remoteFiles.get(relPath);
-      if (!remoteEntry) {
-        entries.push({
-          relPath,
-          localFsPath: localEntry.fspath,
-          remoteFsPath: upath.join(remoteFsPath, relPath),
-          status: CompareStatus.NewLocal,
-        });
-        return;
+      if (remoteEntry) {
+        remoteFiles.delete(relPath);
       }
-
-      remoteFiles.delete(relPath);
-      const status = diffStatus(localEntry, remoteEntry, compareMtime);
-      if (status) {
-        entries.push({
-          relPath,
-          localFsPath: localEntry.fspath,
-          remoteFsPath: remoteEntry.fspath,
-          status,
-        });
+      const entry = classifyPair(localEntry, remoteEntry || null, {
+        relPath,
+        localFsPath: localEntry.fspath,
+        remoteFsPath: remoteEntry ? remoteEntry.fspath : upath.join(remoteFsPath, relPath),
+      }, compareMtime);
+      if (entry) {
+        entries.push(entry);
       }
     });
     remoteFiles.forEach((remoteEntry, relPath) => {
-      entries.push({
+      const entry = classifyPair(null, remoteEntry, {
         relPath,
         localFsPath: path.join(localFsPath, relPath),
         remoteFsPath: remoteEntry.fspath,
-        status: CompareStatus.NewRemote,
-      });
+      }, compareMtime);
+      if (entry) {
+        entries.push(entry);
+      }
     });
     entries.sort((a, b) => a.relPath.localeCompare(b.relPath));
 
@@ -151,6 +212,7 @@ export const compareFolders = createFileHandler<FileHandleOption>({
         localRoot: localFsPath,
         remoteRoot: remoteFsPath,
         serviceName: this.fileService.name,
+        origin: { kind: 'folder', root: localFsPath },
         entries,
       });
     }
@@ -161,6 +223,87 @@ export const compareFolders = createFileHandler<FileHandleOption>({
     };
   },
 });
+
+// Classify an explicit set of selected files (not a folder walk) and load just
+// those into the compare view. Aggregates ALL uris into ONE setResult — a
+// createFileCommand's per-uri fan-out would clobber every file but the last.
+// Groups by fileService so a multi-root/multi-profile selection still works;
+// files outside any config are reported and skipped, not fatal to the batch.
+export async function compareFiles(uris: Uri[]): Promise<void> {
+  const byService = new Map<FileService, FileHandlerContext[]>();
+  for (const uri of uris) {
+    let ctx: FileHandlerContext;
+    try {
+      ctx = handleCtxFromUri(uri);
+    } catch (error) {
+      // selected file isn't under any configured context — skip it
+      reportError(error);
+      continue;
+    }
+    const list = byService.get(ctx.fileService) || [];
+    list.push(ctx);
+    byService.set(ctx.fileService, list);
+  }
+
+  if (byService.size === 0) {
+    return;
+  }
+
+  const entries: CompareEntry[] = [];
+  // roots/header come from the first service; entries carry absolute paths, so a
+  // cross-service selection still renders (the header names the first service).
+  let localRoot: string | undefined;
+  let remoteRoot: string | undefined;
+  let serviceName: string | undefined;
+
+  for (const [fileService, ctxs] of byService) {
+    const config = fileService.getConfig();
+    const remoteFs = await fileService.getRemoteFileSystem(config);
+    const localFs = fileService.getLocalFileSystem();
+    const compareMtime = deriveCompareMtime(config);
+
+    if (localRoot === undefined) {
+      localRoot = fileService.baseDir;
+      remoteRoot = config.remotePath;
+      serviceName = fileService.name;
+    }
+
+    await Promise.all(
+      ctxs.map(async ctx => {
+        const { localFsPath, remoteFsPath } = ctx.target;
+        const relPath = upath.relative(
+          upath.normalize(config.remotePath),
+          upath.normalize(remoteFsPath)
+        );
+        try {
+          const entry = await classifyFile(
+            localFs,
+            remoteFs,
+            { relPath, localFsPath, remoteFsPath },
+            compareMtime
+          );
+          if (entry) {
+            entries.push(entry);
+          }
+        } catch (error) {
+          reportError(error);
+        }
+      })
+    );
+  }
+
+  entries.sort((a, b) => a.relPath.localeCompare(b.relPath));
+
+  if (app.compareExplorer) {
+    app.compareExplorer.setResult({
+      localRoot: localRoot!,
+      remoteRoot: remoteRoot!,
+      serviceName,
+      origin: { kind: 'files', uris: uris.map(uri => uri.toString()) },
+      entries,
+    });
+  }
+}
 
 export interface MatchTimestampOption {
   // which side is the source of truth; the other side is stamped to match it.
