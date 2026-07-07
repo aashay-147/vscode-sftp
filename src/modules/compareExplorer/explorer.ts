@@ -2,7 +2,7 @@ import * as vscode from 'vscode';
 import { registerCommand } from '../../host';
 import { COMMAND_COMPARE_REFRESH } from '../../constants';
 import { reportError, simplifyPath } from '../../helper';
-import { compareFolders, CompareResult } from '../../fileHandlers/compare';
+import { compareFiles, compareFolders, CompareResult } from '../../fileHandlers/compare';
 import CompareTreeDataProvider, { CompareNode } from './treeDataProvider';
 
 export default class CompareExplorer {
@@ -39,7 +39,13 @@ export default class CompareExplorer {
     }
 
     try {
-      await compareFolders(vscode.Uri.file(result.localRoot));
+      // Re-run the SAME scope the result came from. A file selection must not
+      // widen into a full folder walk just because the user hit Refresh.
+      if (result.origin.kind === 'files') {
+        await compareFiles(result.origin.uris.map(uri => vscode.Uri.parse(uri)));
+      } else {
+        await compareFolders(vscode.Uri.file(result.origin.root));
+      }
     } catch (error) {
       reportError(error);
     }

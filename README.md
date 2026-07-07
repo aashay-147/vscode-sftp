@@ -26,6 +26,7 @@ VSCode-SFTP enables you to add, edit or delete files within a local directory an
 - Features
   - [Browser remote with Remote Explorer](#remote-explorer)
   - [Folder Compare](#folder-compare)
+  - Compare selected file(s) against remote
   - Diff local and remote
   - Sync directory
   - Upload/Download
@@ -51,6 +52,16 @@ in [.planning/fork-sftp-plan.md](.planning/fork-sftp-plan.md).
 - **Folder Compare group actions** — right-click a group header to download, upload,
   match timestamps, or delete every file in that category at once, with modal confirms
   for destructive/overwriting actions.
+- **Compare selected file(s)** — right-click one or more files (in the explorer, the
+  Remote Explorer, or an editor tab) and load just those into the Folder Compare view,
+  instead of walking a whole folder. Refresh re-runs the same selection rather than
+  widening to the parent folder.
+- **Diff with Local** — a Remote Explorer file action that diffs a remote file against
+  its local counterpart (the mirror of `Diff with Remote` from the local side).
+- **SFTP context-menu submenu** — the SFTP actions in the shared VS Code menus (file
+  explorer, editor context, editor tab) are grouped under a single `SFTP` submenu so
+  they stop crowding menus alongside other extensions. SFTP-owned views keep their
+  actions flat.
 
 ### 🚧 In progress
 
@@ -338,9 +349,11 @@ Compare a local folder with its remote counterpart and see, per file, what diffe
 
 How to use it:
 
-1. Right-click a folder in the explorer (or a folder in the Remote Explorer) and pick `SFTP: Compare Folder with Remote`, or run `SFTP: Compare Active Folder with Remote` from the command palette.
+1. Right-click a folder in the explorer (or a folder in the Remote Explorer), open the `SFTP` submenu, and pick `Compare Folder with Remote`; or run `SFTP: Compare Active Folder with Remote` from the command palette.
 2. The **Folder Compare** view in the SFTP activity bar container shows the groups above (empty groups are hidden). `ignore` rules from your config apply.
 3. Click a _Modified_ or _Timestamp Only_ entry to open a diff. Use the per-entry inline actions to download, upload, or match-timestamp an entry; the comparison re-runs afterwards. The refresh button re-runs the comparison at any time.
+
+To compare just a **file or a handful of files**, select them (in the explorer, the Remote Explorer, or an editor tab), open the `SFTP` submenu, and pick `Compare File with Remote`. Only those files load into the view, and **Refresh** re-runs that same selection instead of widening to the parent folder. From a Remote Explorer file you can also pick `Diff with Local` to open a direct diff of that remote file against its local copy.
 
 ### Group (whole-category) actions
 

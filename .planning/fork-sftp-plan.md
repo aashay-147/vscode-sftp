@@ -57,6 +57,34 @@
 > 3 Diff-only upload/download, 4 Multi-threaded transfers & checks, 5 Progress
 > indication for compare & sync, 6 Clear Compare, 7 Password security, 8 Custom config
 > location, 9 Download location, 10 Folder Compare nested subfolders (speculative).
+>
+> **UPDATE 2026-07-07 (cont'd 3) — Feature 1b added (Compare selected files, plan
+> only).** A new sub-feature of Folder Compare — "compare individual/selected file(s)"
+> — was added as **Feature 1b**, slotted right after the shipped Feature 1a group
+> actions. Scoped-file compares reuse Feature 1's classification and the same
+> `sftpCompare` tree, so it belongs under Feature 1 rather than taking a new top-level
+> number; Features 2-10 are unaffected (no renumbering). Grounded against the shipped
+> `src/fileHandlers/compare.ts`, `src/modules/compareExplorer/`, the `src/commands/`
+> auto-loader, and `package.json` menus (file:line citations in the 1b section).
+> Features 1/1a are implemented and merged into `integration`; 1b is plan-only.
+>
+> **UPDATE 2026-07-07 (cont'd 4) — Feature 1b built + two UX additions.** Feature 1b
+> (Compare selected file(s)) is now implemented on `integration`, matching this plan:
+> `diffStatus`/`classifyFile`/`deriveCompareMtime` exported from
+> [src/fileHandlers/compare.ts](src/fileHandlers/compare.ts), a `compareFiles`
+> aggregating handler (one `setResult` over the whole selection, grouped by
+> `FileService`), a `CompareOrigin` tag so Refresh re-runs the file selection instead
+> of widening to the folder, and a `sftp.compareFile` (`createCommand`) entry in the
+> shared menus + Remote Explorer file items. Two additions beyond the original 1b scope:
+> (a) **`sftp.diffWithLocal` "Diff with Local"** — a thin Remote Explorer file command
+> reusing the symmetric `diff` handler verbatim (only the title differs), the remote-side
+> mirror of `sftp.diff`; (b) **"SFTP" context-menu submenu** — the shared VS Code menus
+> (explorer/context, editor/context, editor/title/context) now group all SFTP actions
+> under one `SFTP` submenu via `contributes.submenus`; SFTP-owned views (Remote Explorer,
+> `sftpCompare`) stay flat since there's no competing extension to disambiguate from.
+> `revealIn*` was pulled into the submenu with the rest (loses adjacency to VS Code's own
+> "Reveal in Finder" — revisit if that grouping feels wrong). Verified: `tsc --noEmit`
+> clean, webpack build green, `package.json` valid.
 
 ## Context
 
@@ -369,6 +397,150 @@ with context-aware options and modal confirmations for destructive/overwriting a
   headers and logged *"…command get canceled because of missing targets."* Their `when`
   clauses gained a `view == remoteExplorer` guard.
 
+### 1b — Compare selected file(s) *(shipped)*
+
+**Goal:** run the exact same status classification the folder compare does, but scoped
+to one or more explicitly *selected files* (from the local Explorer, the active
+editor, or the Remote Explorer) instead of a whole folder tree, and surface just those
+files in the same `sftpCompare` view. Lets a user check a handful of files without
+walking (and waiting on) an entire directory pair.
+
+**Why this is not already covered:**
+- `sftp.diff` ([src/fileHandlers/diff.ts](src/fileHandlers/diff.ts), command
+  `COMMAND_DIFF`, [constants.ts:51](src/constants.ts#L51)) already diffs *one* file, but
+  it downloads a tmp copy and opens a diff editor immediately — it does **not** classify
+  the file (New Local / New Remote / Modified / Timestamp Only) and does **not** populate
+  the compare tree. It's the "already verify contents" action, not a scoped compare.
+- `compareFolders` ([compare.ts:98-163](src/fileHandlers/compare.ts#L98-L163)) is
+  folder-scoped: it recursively walks both sides via `collectFiles`
+  ([compare.ts:59-96](src/fileHandlers/compare.ts#L59-L96)) and can't be pointed at a
+  file (list on a file path either throws or returns nothing).
+
+**Current state / reusable pieces (grounded):**
+- Classification basis already exists but is **private** to `compare.ts`: `diffStatus`
+  ([compare.ts:49-57](src/fileHandlers/compare.ts#L49-L57)) plus the FTP `compareMtime`
+  gate ([compare.ts:106](src/fileHandlers/compare.ts#L106), `protocol !== 'ftp'`). The
+  per-file New/Modified merge logic lives inline in `compareFolders`
+  ([compare.ts:116-146](src/fileHandlers/compare.ts#L116-L146)).
+- The tree is populated **only** through `CompareExplorer.setResult(result)`
+  ([explorer.ts:28-33](src/modules/compareExplorer/explorer.ts#L28-L33)), which
+  **replaces** the whole result and sets the `localRoot ↔ serviceName` header. There is
+  no append/merge API today; `lastResult` ([explorer.ts:24-26](src/modules/compareExplorer/explorer.ts#L24-L26))
+  is read-only.
+- Multi-select target plumbing already exists and handles all three sources:
+  `uriFromExplorerContextOrEditorContext(item, items)`
+  ([shared.ts:123-143](src/commands/shared.ts#L123-L143)) returns `Uri | Uri[]` for
+  local-explorer multi-select, remote-explorer multi-select, and editor/single context —
+  exactly what `sftp.diff` already uses ([fileCommandDiff.ts](src/commands/fileCommandDiff.ts)).
+- `handleCtxFromUri(uri)` (exported from [src/fileHandlers](src/fileHandlers)) yields a
+  `FileHandlerContext` with `this.target` (a `UResource` carrying `localFsPath`/
+  `remoteFsPath`), `this.config`, and `this.fileService` — including
+  `this.fileService.baseDir` (resolved local context) and `this.config.remotePath`.
+- ⚠️ **`createFileCommand`'s per-uri fan-out is the wrong primitive here.** It maps a
+  `Uri[]` target to one `handleFile` call per uri
+  ([createCommand.ts:66-75](src/commands/abstract/createCommand.ts#L66-L75)); a per-file
+  handler that each called `setResult` would clobber the previous file's result, so a
+  3-file selection would leave only the last file in the tree. Selected-file compare
+  must **aggregate all uris into one `setResult`**, so it's a `createCommand` (like the
+  group commands `src/commands/commandCompareGroup*.ts`), not a `createFileCommand`.
+
+**Changes:**
+
+1. **Factor out a shared single-file classifier in `compare.ts`.** Extract a
+   `classifyFile(localFs, remoteFs, localFsPath, remoteFsPath, relPath, compareMtime)`
+   → `CompareEntry | null` that `lstat`s both sides (swallowing not-found as "missing on
+   that side"), then reproduces the folder-compare decision: missing local →
+   `NewRemote`, missing remote → `NewLocal`, both present → `diffStatus(...)` (Modified /
+   TimeDiff / unchanged→null). Refactor `compareFolders`'s inline merge
+   ([compare.ts:116-146](src/fileHandlers/compare.ts#L116-L146)) to reuse it too, so the
+   two paths can't drift. Export `diffStatus`/`classifyFile` and the `compareMtime`
+   derivation. **No new modified-check logic** — same size+mtime basis, same
+   `remoteTimeOffsetInHours` caveat (offsets already applied by the remote fs layer; do
+   not re-apply).
+
+2. **New handler `compareFiles`** in `compare.ts` (or a thin command-level orchestrator
+   in `src/commands/shared.ts`) that, given the selected uris:
+   - builds `handleCtxFromUri(uri)` per uri to resolve each file's `{target, config,
+     fileService}`, and **groups by `fileService`** (a multi-root/multi-profile selection
+     could span services);
+   - per service: gets `getRemoteFileSystem(config)` + `getLocalFileSystem()` once,
+     derives `compareMtime = config.protocol !== 'ftp'`, and `classifyFile`s each
+     selected file, dropping unchanged (null) entries;
+   - computes roots from the **config context** so `relPath` aligns with folder-compare
+     semantics and the entries slot into the existing groups/nesting: `localRoot =
+     fileService.baseDir`, `remoteRoot = config.remotePath`, `relPath =
+     upath.relative(remoteRoot, target.remoteFsPath)`;
+   - calls `app.compareExplorer.setResult({ localRoot, remoteRoot, serviceName,
+     entries })`, then `executeCommand('sftpCompare.focus')` and the "No differences
+     found" toast when empty — mirroring `fileCommandCompareFolder`
+     ([src/commands/fileCommandCompareFolder.ts](src/commands/fileCommandCompareFolder.ts)).
+
+3. **New command `sftp.compareFile`** (`COMMAND_COMPARE_FILE` in
+   [constants.ts](src/constants.ts) near `COMMAND_COMPARE_FOLDER`,
+   [constants.ts:60](src/constants.ts#L60)) — a new `commandCompareFile.ts` /
+   `fileCommandCompareFile.ts` file directly in `src/commands/` (auto-loaded by
+   [initCommands.ts](src/initCommands.ts)). `getFileTarget:
+   uriFromExplorerContextOrEditorContext` (reuse, [shared.ts:123](src/commands/shared.ts#L123)),
+   then aggregate — do **not** rely on the built-in per-uri fan-out (see the ⚠️ above).
+
+4. **Refresh must not silently widen scope.** `_refresh()`
+   ([explorer.ts:35-46](src/modules/compareExplorer/explorer.ts#L35-L46)) unconditionally
+   re-runs `compareFolders(Uri.file(result.localRoot))` — so refreshing a *file-selection*
+   result would replace it with a full folder walk. Tag the result with its origin:
+   extend `CompareResult` ([compare.ts:25-30](src/fileHandlers/compare.ts#L25-L30)) with
+   `origin: { kind: 'folder'; root: string } | { kind: 'files'; uris: string[] }`, set it
+   in both `compareFolders` and `compareFiles`, and branch in `_refresh()` to re-run the
+   matching operation (re-classify the same file list for `kind: 'files'`). Refreshing a
+   file selection whose files were since deleted on both sides yields an empty result —
+   acceptable (matches folder compare returning nothing).
+
+5. **package.json contributions** (mirror where `sftp.diff` / `sftp.compareFolder`
+   already sit):
+   - `contributes.commands`: `sftp.compareFile`, title e.g. "Compare File with Remote"
+     (near [package.json:308](package.json#L308)).
+   - `explorer/context` + `editor/context` + `editor/title/context` under group
+     `3_compare`, alongside the existing `sftp.diff` entries
+     ([package.json:509,608,683](package.json#L509)); VS Code passes the multi-selection
+     as `items[]` automatically.
+   - `view/item/context` on `remoteExplorer` file items (mirror the `sftp.compareFolder`
+     remote-explorer entry, [package.json:804](package.json#L804)), guarded with
+     `view == remoteExplorer` so it doesn't leak onto compare-tree or other views (the
+     same leak class fixed in 1a).
+
+6. **Docs** — README Folder Compare section: note you can right-click one or more files
+   (Explorer, editor, or Remote Explorer) → "Compare File with Remote" to load just those
+   into the compare view, and that Refresh re-runs the same scope (files stay files).
+
+**Open decisions (call out; defaults proposed):**
+- **Replace vs. merge into the current result.** Default **replace** (a fresh compare of
+  just the selection), matching `compareFolders`' replace semantics and keeping behavior
+  predictable. Merge-into-existing ("add these files to what's already shown") is a nice
+  power-user affordance but needs a `setResult` append path that dedupes by `relPath`+
+  `status` and reconciles a mixed folder-origin + files-origin result for Refresh —
+  defer to a follow-up `sftp.compareFile.add` command if wanted.
+- **Ignore rules.** Folder compare honors `config.ignore`; for an *explicitly selected*
+  file the user chose it on purpose — recommend **not** filtering the selection by
+  `ignore` (explicit selection overrides), unlike the folder walk. Confirm.
+- **Folder in a mixed selection.** Scope 1b to **files only**; if the selection includes
+  a folder, either skip it with a hint to use "Compare Folder", or (simpler) let each
+  folder fall through to `compareFolders`. Recommend files-only first.
+- **Selection spanning multiple services/roots.** Group by `fileService` and emit one
+  combined result (entries already carry absolute local/remote paths); the header shows
+  the first service. Confirm whether a cross-service selection should instead be
+  rejected with a hint.
+
+**Edge cases:** a selected file outside the config context (not under
+`baseDir`/`remotePath`, so `UResource`/`toRemotePath` can't map it) — `handleCtxFromUri`
+mapping fails; report and skip that file rather than aborting the batch (per-file
+error isolation, like `runCompareGroup`, [shared.ts:195-208](src/commands/shared.ts#L195-L208)).
+A file selected from the **Remote Explorer** that has no local counterpart classifies as
+`NewRemote` (local `lstat` ENOENT) — and vice-versa for a local-only file — reusing the
+same missing-side logic as the folder walk. Same `remoteTimeOffsetInHours` round-trip
+caveat as Feature 1 (non-zero offsets may over-report Modified/TimeDiff). FTP: reuse the
+`compareMtime = false` gate, so same-size files are treated unchanged (a lone selected
+FTP file that only drifted in mtime shows nothing — trigger `sftp.diff` to confirm
+contents, same limitation folder compare documents).
+
 ---
 
 ## Feature 2 — Upload/Download overwrite confirmation
@@ -439,7 +611,7 @@ entirely when `confirmOverwrite` is falsy.
 ## Feature 3 — Upload/Download diff-only transfer
 
 **Goal:** explicit upload/download of a folder skips files that are already identical
-on the destination — the same size+mtime check `Sync` already applies — purely as a
+on the destination — the same size ~~+mtime~~ check `Sync` already applies — purely as a
 performance optimization (no prompt, no behavior change beyond fewer redundant
 transfers).
 
@@ -968,6 +1140,22 @@ here so it isn't forgotten.
   `src/extension.ts` (register compare explorer; thread `context.secrets` into config
   module), README.
 
+- Modify (Feature 1b — Compare selected file(s), shipped on `integration`):
+  [src/fileHandlers/compare.ts](src/fileHandlers/compare.ts) (factor the on-both-sides
+  classification out of `compareFolders` into a shared `classifyFile`/exported
+  `diffStatus`; add a `compareFiles` handler that groups the selected uris by
+  `fileService`, derives roots from `baseDir`/`remotePath`, and emits ONE aggregated
+  `setResult`; tag `CompareResult.origin` = `folder | files`),
+  [src/modules/compareExplorer/explorer.ts](src/modules/compareExplorer/explorer.ts)
+  (branch `_refresh()` on `result.origin` so a file-scoped result re-runs `compareFiles`
+  over its own uris instead of silently widening to a full folder walk),
+  `src/constants.ts` (`COMMAND_COMPARE_FILE = 'sftp.compareFile'`),
+  new `src/commands/commandCompareFile.ts` (a `createCommand` — NOT `createFileCommand`,
+  whose per-uri fan-out would clobber `setResult` — using
+  `uriFromExplorerContextOrEditorContext` to gather the multi-select),
+  `package.json` (command + `explorer/context`/`editor/context`/remoteExplorer menus in
+  the `3_compare` group, mirroring `sftp.diff`/`sftp.compareFolder`), README.
+
 - Create: a password-entry/migration command (Feature 7).
 
 - **Already shipped, not to be re-created:** `src/modules/compareExplorer/
@@ -993,6 +1181,17 @@ here so it isn't forgotten.
    file, a modified file); run `SFTP: Compare Folder`; verify the three groups populate
    correctly; click Modified → diff opens; New Remote → download works (lands in
    `downloadPath` when set); New Local → upload works; Refresh updates after a change.
+
+3b. **Selected-file compare (Feature 1b):** in the local explorer, multi-select a
+   handful of files (some in sync, some modified, one local-only) and run
+   `SFTP: Compare Selected Files`; confirm the `sftpCompare` view shows ONLY those
+   files classified into the same groups (not the whole folder), that the header
+   reflects the file-scoped result, and that a single `setResult` populated all of
+   them (no clobbering to just the last uri); click Modified → diff opens; run the
+   same command from the editor context and the remote explorer; press Refresh and
+   confirm it re-classifies the SAME selected files (stays scoped, no widening to a
+   folder walk); repeat over an FTP profile and confirm size-only classification
+   (no spurious TimeDiff).
 
 4. **Overwrite confirmation (Feature 2):** with `confirmOverwrite: 'confirm'` on a
    profile, Upload/Download a file that already exists at the destination and confirm

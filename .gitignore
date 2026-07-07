@@ -8,7 +8,7 @@ TODO.md
 INSTALL_DEBUG.md
 
 ### Extensions ###
-sftp-*.vsix
+# sftp-*.vsix
 
 ### VS Code ###
 .vscode/**
@@ -35,3 +35,5 @@ bower_components
 .bower-cache
 .bower-registry
 .bower-tmp
+
+Java Script/**

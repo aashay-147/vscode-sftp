@@ -49,6 +49,7 @@ export const COMMAND_SYNC_REMOTE_TO_LOCAL = 'sftp.sync.remoteToLocal';
 export const COMMAND_SYNC_BOTH_DIRECTIONS = 'sftp.sync.bothDirections';
 
 export const COMMAND_DIFF = 'sftp.diff';
+export const COMMAND_DIFF_WITH_LOCAL = 'sftp.diffWithLocal';
 export const COMMAND_DIFF_ACTIVEFILE = 'sftp.diff.activeFile';
 export const COMMAND_LIST = 'sftp.list';
 export const COMMAND_LIST_ACTIVEFOLDER = 'sftp.listActiveFolder';
@@ -58,6 +59,7 @@ export const COMMAND_REVEAL_IN_EXPLORER = 'sftp.revealInExplorer';
 export const COMMAND_REVEAL_IN_REMOTE_EXPLORER = 'sftp.revealInRemoteExplorer';
 
 export const COMMAND_COMPARE_FOLDER = 'sftp.compareFolder';
+export const COMMAND_COMPARE_FILE = 'sftp.compareFile';
 export const COMMAND_COMPARE_ACTIVEFOLDER = 'sftp.compareActiveFolder';
 export const COMMAND_COMPARE_REFRESH = 'sftp.compare.refresh';
 export const COMMAND_COMPARE_DIFF = 'sftp.compare.diff';
