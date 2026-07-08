@@ -1,9 +1,11 @@
-# Agent Instructions — Expense Manager
 
-> **You are a coding agent working in this repo.** Read this file first, every session.
-> It is the _operating contract_: how to build here so the result stays correct, secure, and
-> maintainable by a **single developer** (the architect) who builds through agents and only
-> touches the code directly for specific bugs.
+# Agent Instructions — SFTP VSCode Extension
+
+> **You are a coding agent working in this repo.** This is the _operating contract_: how to
+> build here so the result stays correct, secure, and maintainable by a **single developer**
+> (the architect) who builds through agents and only touches the code directly for specific bugs.
+>
+> **Terse mode ("caveman") is ON by default — write every chat reply in the style of §2.**
 >
 > `CLAUDE.md` and `AGENTS.md` at the repo root are symlinks to this file.
 
@@ -43,34 +45,46 @@ session inherits the correct rules.
 
 ## 2. Terse mode ("caveman") — chat prose only
 
-**Default ON — every conversational reply MUST use this style.** One person reads every reply and
-pays for every token. Opt out for a session with "caveman off"; resume with "caveman on". Two
-states only — ON and OFF — at one fixed intensity. No other levels. In Claude Code the style is
-additionally enforced by the project output style (`.claude/output-styles/caveman.md`); this block
-is the source of truth and covers every other agent (Codex, Cursor, …).
+**Write every conversational reply in terse caveman style. Default ON, no exceptions** beyond the
+short list below. One person reads every reply and pays for every token. This overrides any
+default guidance to write complete sentences, explanatory prose, or reader-friendly summaries —
+in chat, terse wins. The user opts out for a session with "caveman off"; "caveman on" resumes.
+Two states only, one fixed intensity.
 
-**Style the conversational prose only.** Terse like a smart caveman: every technical fact stays,
-only fluff dies. Drop articles, filler, pleasantries, hedging; fragments OK; lead with the result:
-`[thing] [action] [reason]. [next step].`
+Terse like a smart caveman: every technical fact stays, only fluff dies. Drop articles, filler,
+pleasantries, hedging; fragments OK; lead with the result: `[thing] [action] [reason]. [next step].`
 
 > Verbose: "I've finished running the test suite and everything passes. Next I'll update the
 > documentation to reflect the change."
 > Caveman: "Tests pass. Updating docs next."
+>
+> Verbose: "I looked into the failing build and it seems the issue might be related to a missing
+> dependency, so I'm going to try installing it."
+> Caveman: "Build fails: missing dependency `ssh2`. Installing."
+
+Rules:
 
 - **Real words only.** Never invent abbreviations (impl/cfg/req) and no arrow chains — tokenizers
   split them like the full words (zero tokens saved) and the reader pays. Short real words win.
-- **Tool usage is exempt and protected** (fewer words, never worse work):
-  - Tool _inputs_ are never styled: code, file contents, comments, commit messages, PR bodies,
-    subagent prompts, and anything written under `docs/` or `.planning/` stay normal prose.
-  - Identifiers, commands, code blocks, error strings: byte-exact, never compressed.
-  - Don't dump raw tool output — summarise in 1–2 lines. Keep prose clear of tool-call structure:
-    one plain short sentence before a call, or nothing.
+- **Cut words, never content.** If terseness would lose a technical fact, keep the fact.
+- **Don't dump raw tool output** — summarise in 1–2 lines. One plain short sentence before a tool
+  call, or nothing.
+
+Exemptions (fewer words, never worse work):
+
+- Tool _inputs_ are never styled: code, file contents, comments, commit messages, PR bodies,
+  subagent prompts, and anything written under `docs/` or `.planning/` stay normal prose.
+- Identifiers, commands, code blocks, error strings: byte-exact, never compressed.
 - **Auto-drop to normal** only for: anything touching §7 (tenant isolation, secrets, `core`/`iam`),
   destructive/irreversible confirmations, and the final handoff summary of a session (the architect
   reads those months later). Resume after. These three cases — nothing else qualifies.
 
-> Adopted after a measured A/B (both models: zero tool-call corruption, 13–41% fewer output tokens,
-> no quality loss). Method and numbers: [`.planning/caveman-terse-mode-plan.md`](../../.planning/caveman-terse-mode-plan.md).
+Before sending each reply: cut greeting, cut preamble, cut hedge words.
+
+In Claude Code the style is additionally enforced by the project output style
+(`.claude/output-styles/caveman.md`); this block is the source of truth and covers every other
+agent (Codex, Cursor, …). Adopted after a measured A/B — method and numbers:
+[`.planning/caveman-terse-mode-plan.md`](../../.planning/caveman-terse-mode-plan.md).
 
 ---
 
@@ -93,13 +107,33 @@ tiers you used when reporting back so the choice is auditable.
 
 ## 4. What this project is
 
-We want our own SFTP extension for VS Code with two new capabilities on top of an
-existing, actively-maintained base (Natizyskunk/vscode-sftp):
+We want our own SFTP extension for VS Code, forked from an existing, actively-maintained
+base (Natizyskunk/vscode-sftp), with a set of new capabilities on top.
 
-1. **Folder Compare & diffs** — a way to compare a local folder against its remote
-   counterpart and see, per file: *New Remote*, *New Local*, or *Modified* (differs
-   on both sides), with click-to-diff.
+**Feature numbering is authoritative in [`.planning/fork-sftp-plan.md`](../../.planning/fork-sftp-plan.md), not here.**
+The plan has been reordered several times; always resolve "Feature N" against that file's
+`## Feature N` headings, not against this list. Current order (2026-07-07):
 
-2. **Configurable download location** — let the user decide, in config, where
-   downloads land locally, independent of the working `context` folder — settable
-   **per profile**.
+1. **Folder Compare & diffs** — compare a local folder against its remote counterpart and
+   see, per file: _New Remote_, _New Local_, _Modified_, or _Timestamp Only_, with
+   click-to-diff. _Shipped (incl. 1a group actions, 1b compare-selected-files) on
+   `integration`._
+2. **Upload/Download overwrite confirmation** — per-profile-overridable prompt before an
+   explicit upload/download overwrites an existing destination file.
+3. **Upload/Download diff-only transfer** — skip already-identical files on explicit
+   upload/download, the way `Sync` does, to cut transfer time.
+4. **Multi-threaded / parallel upload, download & checks** — real transfer/comparison
+   throughput via a per-profile connection pool instead of one shared channel.
+5. **Progress indication for compare & sync** — per-operation progress + pause/resume/stop,
+   replacing the blunt global spinner.
+6. **Clear Compare** — reset the Folder Compare view back to empty on demand.
+7. **Password security in config** — stop storing SFTP passwords plaintext in
+   `.vscode/sftp.json`.
+8. **Custom location for the SFTP config file** — point the extension at an `sftp.json`
+   outside the default `.vscode/` folder.
+9. **Configurable download location** — let the user decide, in config, where downloads
+   land locally, independent of the working `context` folder — settable **per profile**.
+   _(Previously prototyped on `feat/download-path`, reverted out of `integration`; to be
+   reimplemented from scratch with true bidirectional local-mirror semantics.)_
+10. **Folder Compare view: show subfolders** _(speculative — validate demand first)_ —
+    nest the compare tree by folder instead of a flat per-status file list.
