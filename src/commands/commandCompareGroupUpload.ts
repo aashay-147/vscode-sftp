@@ -27,6 +27,10 @@ export default checkCommand({
       }
     }
 
-    await runCompareGroup(entries, uri => uploadFile(uri, { ignore: null }));
+    // This group action already shows its own batched modal above; suppress the
+    // per-file overwrite prompt so a Modified group doesn't fire N more prompts.
+    await runCompareGroup(entries, uri =>
+      uploadFile(uri, { ignore: null, confirmOverwrite: false })
+    );
   },
 });

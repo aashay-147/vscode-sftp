@@ -70,6 +70,11 @@
         "description": "True to download when a file opens.",
         "default": "confirm"
       },
+      "confirmOverwrite": {
+        "enum": ["confirm", true, false],
+        "description": "Prompt before overwriting an existing destination file on an explicit upload/download. `true` and `\"confirm\"` are synonyms. Default false keeps silent one-click overwrite. Does not affect Sync, Force, or Edit-in-Local.",
+        "default": false
+      },
       "syncOption": {
         "type": "object",
         "description": "Configuration the behavior of `Sync` command.",

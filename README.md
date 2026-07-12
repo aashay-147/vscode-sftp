@@ -65,13 +65,15 @@ in [.planning/fork-sftp-plan.md](.planning/fork-sftp-plan.md).
 
 ### 🚧 In progress
 
-_Nothing in active development right now._
+- **Upload/Download overwrite confirmation** — a per-profile `confirmOverwrite`
+  setting (`false` by default, or `true`/`"confirm"`) that prompts before an
+  explicit upload/download overwrites an existing destination file, instead of
+  today's silent one-click overwrite. A folder transfer asks once for the whole
+  walk. Sync, Force, the Compare-view actions, and Edit-in-Local are unaffected.
+  Implemented on `integration`; pending review.
 
 ### 📋 Upcoming
 
-- **Upload/Download overwrite confirmation** — a per-profile-overrideable prompt
-  before an explicit upload/download overwrites an existing destination file, instead
-  of today's silent one-click overwrite.
 - **Upload/Download diff-only transfer** — skip files already identical on the
   destination during explicit upload/download, the way `Sync` already does, to cut
   needless transfer time.

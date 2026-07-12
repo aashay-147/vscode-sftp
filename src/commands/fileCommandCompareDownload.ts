@@ -9,7 +9,9 @@ export default checkFileCommand({
   getFileTarget: uriFromCompareItem,
 
   async handleFile(ctx) {
-    await downloadFile(ctx, { ignore: null });
+    // Compare-view download is an explicit act on a known-differing file; suppress
+    // the per-file overwrite prompt so it doesn't double up on the compare flow.
+    await downloadFile(ctx, { ignore: null, confirmOverwrite: false });
     await executeCommand(COMMAND_COMPARE_REFRESH);
   },
 });

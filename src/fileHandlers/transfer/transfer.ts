@@ -10,9 +10,14 @@ import {
 import { FileHandleOption } from '../option';
 import { flatten } from '../../utils';
 import logger from '../../logger';
-import { getOpenTextDocuments } from '../../host';
+import { getOpenTextDocuments, showConfirmMessageModal } from '../../host';
 
-interface InternalTransferOption extends FileHandleOption, TransferTaskTransferOption {}
+interface InternalTransferOption extends FileHandleOption, TransferTaskTransferOption {
+  // Internal sentinel (not a config field): set on children during a folder
+  // walk once the single top-level overwrite confirmation has been accepted, so
+  // per-file prompts are suppressed for the rest of that walk.
+  _overwriteConfirmed?: boolean;
+}
 
 type ExternalTransferOption<T extends InternalTransferOption> = Pick<
   T,
@@ -80,6 +85,25 @@ async function transferFolder(
     return;
   }
 
+  // Overwrite confirmation for a folder transfer: show ONE modal for the whole
+  // walk, at the top-level folder only (`_overwriteConfirmed` not yet set by a
+  // parent). A per-file prompt here would fire once per file — unusable, and a
+  // destination round-trip per file. On accept, children carry the
+  // `_overwriteConfirmed` sentinel so step-3's per-file check is bypassed. The
+  // message is status-neutral by design: `transferFolder` only sees this level's
+  // entries (nested contents get the sentinel and are never counted, and dir
+  // entries would be miscounted as files), so an exact "N files" figure would
+  // understate risk — a recursive pre-walk to fix that reintroduces the
+  // doubled-listing cost this feature avoids.
+  if (transferOption.confirmOverwrite && !transferOption._overwriteConfirmed) {
+    const ok = await showConfirmMessageModal(
+      'Overwrite existing files in this folder? Existing destination files may be replaced.'
+    );
+    if (!ok) {
+      return;
+    }
+  }
+
   // Need this to make sure file can correct transfer
   await targetFs.ensureDir(targetFsPath);
 
@@ -99,6 +123,9 @@ async function transferFolder(
             ...config.transferOption,
             mtime: file.mtime,
             atime: file.atime,
+            // The folder-level confirmation above (or its absence) covers every
+            // descendant; suppress per-file prompts for the rest of this walk.
+            _overwriteConfirmed: true,
           },
           srcFsPath: file.fspath,
           targetFsPath: targetFs.pathResolver.join(targetFsPath, file.name),
@@ -176,6 +203,27 @@ async function transferWithType(
         }
       }
       // save before upload: end >>>
+      // Overwrite confirmation for a single-file transfer. Skipped when a folder
+      // walk already confirmed for this run (`_overwriteConfirmed`), and skipped
+      // entirely — no destination `lstat` — when the option is off, preserving
+      // the zero-round-trip default. TOCTOU is accepted: the check runs at
+      // collect time, the put/get later in the scheduler.
+      if (
+        config.transferOption.confirmOverwrite &&
+        !config.transferOption._overwriteConfirmed
+      ) {
+        const exists = await config.targetFs
+          .lstat(config.targetFsPath)
+          .then(() => true, () => false); // swallow ENOENT, like list().catch(() => [])
+        if (exists) {
+          const ok = await showConfirmMessageModal(
+            `${config.targetFsPath} already exists. Overwrite?`
+          );
+          if (!ok) {
+            return; // skip this file; do not collect a task
+          }
+        }
+      }
       transferFile(config, fileType, collect);
       break;
     default:

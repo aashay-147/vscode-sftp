@@ -8,6 +8,9 @@ export default checkFileCommand({
   getFileTarget: uriFromExplorerContextOrEditorContext,
 
   async handleFile(ctx) {
-    await upload(ctx, { ignore: null });
+    // Force upload never prompts, even with confirmOverwrite on. createFileHandler
+    // applies call-site options after transformOption, so this overrides the
+    // config value and preserves "force = no prompt".
+    await upload(ctx, { ignore: null, confirmOverwrite: false });
   },
 });
