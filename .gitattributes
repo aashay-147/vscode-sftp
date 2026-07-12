@@ -1,0 +1,9 @@
+# The repository stores text as LF and checks it out as LF on every platform.
+# Contributors may work on Windows, but the dev container that builds and runs
+# this extension is Linux. A CRLF checkout breaks shell scripts at the shebang
+# and turns ordinary edits into whole-file diffs against upstream.
+* text=auto eol=lf
+
+# Binary assets — never EOL-convert these.
+*.png  binary
+*.vsix binary
