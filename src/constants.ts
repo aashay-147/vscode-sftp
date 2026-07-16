@@ -62,6 +62,7 @@ export const COMMAND_COMPARE_FOLDER = 'sftp.compareFolder';
 export const COMMAND_COMPARE_FILE = 'sftp.compareFile';
 export const COMMAND_COMPARE_ACTIVEFOLDER = 'sftp.compareActiveFolder';
 export const COMMAND_COMPARE_REFRESH = 'sftp.compare.refresh';
+export const COMMAND_COMPARE_CLEAR = 'sftp.compare.clear';
 export const COMMAND_COMPARE_DIFF = 'sftp.compare.diff';
 export const COMMAND_COMPARE_DOWNLOAD = 'sftp.compare.download';
 export const COMMAND_COMPARE_UPLOAD = 'sftp.compare.upload';

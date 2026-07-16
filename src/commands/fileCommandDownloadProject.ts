@@ -8,6 +8,8 @@ export default checkFileCommand({
   getFileTarget: selectContext,
 
   async handleFile(ctx) {
-    await downloadFolder(ctx);
+    // Explicit command: tell the user when the target matches ignore instead
+    // of silently doing nothing.
+    await downloadFolder(ctx, { notifyIgnored: true });
   },
 });

@@ -331,6 +331,12 @@
         "icon": "$(refresh)"
       },
       {
+        "command": "sftp.compare.clear",
+        "title": "Clear Comparison",
+        "category": "SFTP",
+        "icon": "$(clear-all)"
+      },
+      {
         "command": "sftp.compare.diff",
         "title": "Diff with Remote",
         "category": "SFTP",
@@ -586,6 +592,10 @@
           "when": "sftp.enabled"
         },
         {
+          "command": "sftp.compare.clear",
+          "when": "sftp.enabled"
+        },
+        {
           "command": "sftp.compare.diff",
           "when": "false"
         },
@@ -780,6 +790,11 @@
         },
         {
           "command": "sftp.compare.refresh",
+          "when": "view == sftpCompare",
+          "group": "navigation"
+        },
+        {
+          "command": "sftp.compare.clear",
           "when": "view == sftpCompare",
           "group": "navigation"
         }

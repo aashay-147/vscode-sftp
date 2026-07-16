@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 import { registerCommand } from '../../host';
-import { COMMAND_COMPARE_REFRESH } from '../../constants';
+import { COMMAND_COMPARE_CLEAR, COMMAND_COMPARE_REFRESH } from '../../constants';
 import { reportError, simplifyPath } from '../../helper';
 import { compareFiles, compareFolders, CompareResult } from '../../fileHandlers/compare';
 import CompareTreeDataProvider, { CompareNode } from './treeDataProvider';
@@ -19,6 +19,9 @@ export default class CompareExplorer {
     context.subscriptions.push(this._explorerView);
 
     registerCommand(context, COMMAND_COMPARE_REFRESH, () => this._refresh());
+    // setResult(null) is idempotent, so no guard is needed here (unlike
+    // _refresh, which would re-run a compare against nothing).
+    registerCommand(context, COMMAND_COMPARE_CLEAR, () => this.setResult(null));
   }
 
   get lastResult(): CompareResult | null {

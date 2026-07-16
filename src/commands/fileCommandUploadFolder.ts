@@ -7,5 +7,9 @@ export default checkFileCommand({
   id: COMMAND_UPLOAD_FOLDER,
   getFileTarget: uriFromExplorerContextOrEditorContext,
 
-  handleFile: uploadFolder,
+  async handleFile(ctx) {
+    // Explicit command: tell the user when the target matches ignore instead
+    // of silently doing nothing.
+    await uploadFolder(ctx, { notifyIgnored: true });
+  },
 });

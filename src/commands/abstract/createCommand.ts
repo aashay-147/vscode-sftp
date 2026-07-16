@@ -6,7 +6,16 @@ import {
 } from '../../constants';
 import { reportError } from '../../helper';
 import { handleCtxFromUri, allHandleCtxFromUri, FileHandlerContext } from '../../fileHandlers';
+import { getFileService } from '../../modules/serviceManager';
 import Command from './command';
+
+// With confirmOverwrite on, a concurrent fan-out would stack several modals at
+// once (multi-select, all-profiles). Run those targets sequentially instead so
+// prompts appear one at a time; flag-off keeps the concurrent fan-out.
+function hasConfirmOverwrite(uri: Uri): boolean {
+  const fileService = getFileService(uri);
+  return fileService ? Boolean(fileService.getConfig().confirmOverwrite) : false;
+}
 
 interface BaseCommandOption {
   id: string;
@@ -64,15 +73,21 @@ export function createFileCommand(commandOption: FileCommandOption & { name: str
       }
 
       const targetList: Uri[] = Array.isArray(target) ? target : [target];
-      const pendingTasks = targetList.map(async uri => {
+      const run = async (uri: Uri) => {
         try {
           await commandOption.handleFile(handleCtxFromUri(uri));
         } catch (error) {
           reportError(error);
         }
-      });
+      };
 
-      await Promise.all(pendingTasks);
+      if (targetList.length > 1 && targetList.some(hasConfirmOverwrite)) {
+        for (const uri of targetList) {
+          await run(uri);
+        }
+      } else {
+        await Promise.all(targetList.map(run));
+      }
     }
   };
 }
@@ -98,15 +113,30 @@ export function createFileMultiCommand(commandOption: FileCommandOption & { name
       }
 
       const targetList: Uri[] = Array.isArray(target) ? target : [target];
-      const pendingTasks = targetList.map(async uri => {
+      const run = async (uri: Uri) => {
         try {
-          await Promise.all(allHandleCtxFromUri(uri).map(commandOption.handleFile));
+          const ctxs = allHandleCtxFromUri(uri);
+          // One profile at a time when any profile could prompt — a concurrent
+          // fan-out races several modals for different destinations.
+          if (ctxs.some(ctx => Boolean(ctx.config.confirmOverwrite))) {
+            for (const ctx of ctxs) {
+              await commandOption.handleFile(ctx);
+            }
+          } else {
+            await Promise.all(ctxs.map(commandOption.handleFile));
+          }
         } catch (error) {
           reportError(error);
         }
-      });
+      };
 
-      await Promise.all(pendingTasks);
+      if (targetList.length > 1 && targetList.some(hasConfirmOverwrite)) {
+        for (const uri of targetList) {
+          await run(uri);
+        }
+      } else {
+        await Promise.all(targetList.map(run));
+      }
     }
   };
 }

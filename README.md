@@ -62,6 +62,10 @@ in [.planning/fork-sftp-plan.md](.planning/fork-sftp-plan.md).
   explorer, editor context, editor tab) are grouped under a single `SFTP` submenu so
   they stop crowding menus alongside other extensions. SFTP-owned views keep their
   actions flat.
+- **Clear Compare** — a button in the Folder Compare view's title bar (next to
+  Refresh) that resets the view back to empty on demand, instead of a stale result
+  sitting there until the next re-compare. Non-destructive: it only discards the
+  in-memory tree, never files.
 
 ### 🚧 In progress
 
@@ -83,8 +87,6 @@ in [.planning/fork-sftp-plan.md](.planning/fork-sftp-plan.md).
 - **Progress indication for compare & sync** — a real progress notification for
   these two multi-file operations, with pause/resume/stop controls, in place of
   the current blunt status-bar spinner.
-- **Clear Compare** — a button to reset the Folder Compare view back to empty on
-  demand, instead of a stale result sitting there until the next re-compare.
 - **Password security in config** — move stored passwords out of plaintext
   `.vscode/sftp.json` and into VS Code's `SecretStorage`, with a migration path for
   existing configs.
@@ -353,7 +355,7 @@ How to use it:
 
 1. Right-click a folder in the explorer (or a folder in the Remote Explorer), open the `SFTP` submenu, and pick `Compare Folder with Remote`; or run `SFTP: Compare Active Folder with Remote` from the command palette.
 2. The **Folder Compare** view in the SFTP activity bar container shows the groups above (empty groups are hidden). `ignore` rules from your config apply.
-3. Click a _Modified_ or _Timestamp Only_ entry to open a diff. Use the per-entry inline actions to download, upload, or match-timestamp an entry; the comparison re-runs afterwards. The refresh button re-runs the comparison at any time.
+3. Click a _Modified_ or _Timestamp Only_ entry to open a diff. Use the per-entry inline actions to download, upload, or match-timestamp an entry; the comparison re-runs afterwards. The refresh button re-runs the comparison at any time; the clear button next to it empties the view.
 
 To compare just a **file or a handful of files**, select them (in the explorer, the Remote Explorer, or an editor tab), open the `SFTP` submenu, and pick `Compare File with Remote`. Only those files load into the view, and **Refresh** re-runs that same selection instead of widening to the parent folder. From a Remote Explorer file you can also pick `Diff with Local` to open a direct diff of that remote file against its local copy.
 

@@ -4,6 +4,7 @@ import { COMMAND_UPLOAD_CHANGEDFILES } from '../constants';
 import { getFileService } from '../modules/serviceManager';
 import { uploadFile, renameRemote, removeRemote } from '../fileHandlers';
 import { getGitService, GitAPI, Repository, Status, Change } from '../modules/git';
+import { showConfirmMessageModal } from '../host';
 import { checkCommand } from './abstract/createCommand';
 import logger from '../logger';
 import { simplifyPath } from '../helper';
@@ -69,10 +70,13 @@ async function handleCommand(hint: any) {
   const uploads: Change[] = [];
   const renames: Change[] = [];
   const deletes: Change[] = [];
+  let confirmOverwrite = false;
   for (const change of changes) {
-    if (!getFileService(change.uri)) {
+    const fileService = getFileService(change.uri);
+    if (!fileService) {
       continue;
     }
+    confirmOverwrite = confirmOverwrite || Boolean(fileService.getConfig().confirmOverwrite);
 
     switch (change.status) {
       case Status.INDEX_MODIFIED:
@@ -95,29 +99,42 @@ async function handleCommand(hint: any) {
     }
   }
 
-  await Promise.all(creates.concat(uploads).map(change => {
-    try {
-      uploadFile(change.uri)
-    } catch (e) {
-      logger.error('Upload failed.', e);
+  // One batched confirm for the whole run, then per-uri confirmOverwrite: false
+  // so the per-file gate stays silent. Interim until staged classification
+  // (Phase 2): the wording is status-neutral because nothing here verified that
+  // any destination file actually exists.
+  const uploadCount = creates.length + uploads.length;
+  if (confirmOverwrite && uploadCount > 0) {
+    const ok = await showConfirmMessageModal(
+      `Upload ${uploadCount} changed file${uploadCount > 1 ? 's' : ''}? ` +
+        'Destination files may be replaced.'
+    );
+    if (!ok) {
+      return;
     }
-  }));
+  }
+
   await Promise.all(
-    renames.map(change => {
-      try {
-        renameRemote(change.originalUri, { originPath: change.renameUri!.fsPath });
-      } catch (e) {
-        logger.error('Rename failed.', e);
-      }
-    })
+    creates.concat(uploads).map(change =>
+      uploadFile(change.uri, { confirmOverwrite: false }).catch(e => {
+        logger.error('Upload failed.', e);
+      })
+    )
   );
-  await Promise.all(deletes.map(change => {
-    try {
-      removeRemote(change.uri)
-    } catch (e) {
-      logger.error('Deletion failed.', e);
-    }
-  }));
+  await Promise.all(
+    renames.map(change =>
+      renameRemote(change.originalUri, { originPath: change.renameUri!.fsPath }).catch(e => {
+        logger.error('Rename failed.', e);
+      })
+    )
+  );
+  await Promise.all(
+    deletes.map(change =>
+      removeRemote(change.uri).catch(e => {
+        logger.error('Deletion failed.', e);
+      })
+    )
+  );
 
   logger.log('');
   logger.log('------ Upload Changed Files Result ------');

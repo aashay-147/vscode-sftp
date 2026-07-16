@@ -7,5 +7,9 @@ export default checkFileCommand({
   id: COMMAND_UPLOAD_PROJECT,
   getFileTarget: selectContext,
 
-  handleFile: uploadFolder,
+  async handleFile(ctx) {
+    // Explicit command: tell the user when the target matches ignore instead
+    // of silently doing nothing.
+    await uploadFolder(ctx, { notifyIgnored: true });
+  },
 });

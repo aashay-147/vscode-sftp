@@ -1,6 +1,8 @@
 import { Uri } from 'vscode';
+import * as path from 'path';
 import app from '../app';
 import { UResource, FileService, ServiceConfig } from '../core';
+import { showInformationMessage } from '../host';
 import logger from '../logger';
 import { getFileService } from '../modules/serviceManager';
 
@@ -98,6 +100,11 @@ export default function createFileHandler<T>(
     }
 
     if (invokeOption.ignore && invokeOption.ignore(target.localFsPath)) {
+      if (invokeOption.notifyIgnored) {
+        showInformationMessage(
+          `'${path.basename(target.localFsPath)}' matches ignore — nothing transferred`
+        );
+      }
       return;
     }
 

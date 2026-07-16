@@ -7,5 +7,9 @@ export default checkFileCommand({
   id: COMMAND_DOWNLOAD_FOLDER,
   getFileTarget: uriFromExplorerContextOrEditorContext,
 
-  handleFile: downloadFolder,
+  async handleFile(ctx) {
+    // Explicit command: tell the user when the target matches ignore instead
+    // of silently doing nothing.
+    await downloadFolder(ctx, { notifyIgnored: true });
+  },
 });

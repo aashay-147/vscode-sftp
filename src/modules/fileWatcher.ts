@@ -35,7 +35,9 @@ function doUpload() {
     const fspath = uri.fsPath;
     logger.info(`[watcher/updated] ${fspath}`);
     try {
-      await upload(uri);
+      // Implicit path: watcher autoUpload fires on every debounce tick and must
+      // never prompt, whatever the profile's confirmOverwrite value.
+      await upload(uri, { confirmOverwrite: false });
     } catch (error) {
       logger.error(error, `upload ${fspath}`);
       app.sftpBarItem.updateStatus(StatusBarItem.Status.error);
