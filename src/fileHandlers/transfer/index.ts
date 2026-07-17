@@ -1,12 +1,50 @@
+import { FileType } from '../../core';
 import { refreshRemoteExplorer } from '../shared';
 import createFileHandler, { FileHandlerContext } from '../createFileHandler';
 import { transfer, sync, TransferOption, SyncOption, TransferDirection } from './transfer';
+import {
+  StagedTransferCancelledError,
+  lstatTypeOrNull,
+  stageAndConfirmFolderTransfer,
+} from './stagedTransfer';
 
 function createTransferHandle(direction: TransferDirection) {
   return async function handle(this: FileHandlerContext, option) {
     const remoteFs = await this.fileService.getRemoteFileSystem(this.config);
     const localFs = this.fileService.getLocalFileSystem();
     const { localFsPath, remoteFsPath } = this.target;
+
+    // Staged flow (Features 2+3). The flag check MUST come before any stat so
+    // the flags-off default stays zero-extra-round-trip on both sides; the
+    // flags-on duplicate source lstat (transfer() repeats it below) is
+    // accepted. Files fall through to the per-file gate in transferWithType.
+    if (option.confirmOverwrite || option.skipUnmodified) {
+      const fromRemote = direction === TransferDirection.REMOTE_TO_LOCAL;
+      const srcType = await lstatTypeOrNull(
+        fromRemote ? remoteFs : localFs,
+        fromRemote ? remoteFsPath : localFsPath
+      );
+      if (srcType === FileType.Directory) {
+        const decision = await stageAndConfirmFolderTransfer(
+          this,
+          option,
+          direction,
+          localFs,
+          remoteFs
+        );
+        if (decision.action === 'cancelRemaining') {
+          throw new StagedTransferCancelledError();
+        }
+        if (decision.action !== 'proceed') {
+          return;
+        }
+        option._overwriteConfirmed = true;
+        if (decision.skipSet) {
+          option._skipSet = decision.skipSet;
+        }
+      }
+    }
+
     const scheduler = this.fileService.createTransferScheduler(this.config.concurrency);
     let transferConfig;
 
@@ -130,6 +168,7 @@ export const upload = createFileHandler<TransferOption>({
       // remoteTimeOffsetInHours: config.remoteTimeOffsetInHours,
       ignore: config.ignore,
       confirmOverwrite: config.confirmOverwrite,
+      skipUnmodified: config.skipUnmodified,
     };
   },
   afterHandle() {
@@ -149,6 +188,7 @@ export const uploadFile = createFileHandler<TransferOption>({
       // remoteTimeOffsetInHours: config.remoteTimeOffsetInHours,
       ignore: config.ignore,
       confirmOverwrite: config.confirmOverwrite,
+      skipUnmodified: config.skipUnmodified,
     };
   },
   afterHandle() {
@@ -168,6 +208,7 @@ export const uploadFolder = createFileHandler<TransferOption>({
       // remoteTimeOffsetInHours: config.remoteTimeOffsetInHours,
       ignore: config.ignore,
       confirmOverwrite: config.confirmOverwrite,
+      skipUnmodified: config.skipUnmodified,
     };
   },
   afterHandle() {
@@ -185,6 +226,7 @@ export const download = createFileHandler<TransferOption>({
       // remoteTimeOffsetInHours: config.remoteTimeOffsetInHours,
       ignore: config.ignore,
       confirmOverwrite: config.confirmOverwrite,
+      skipUnmodified: config.skipUnmodified,
     };
   },
 });
@@ -199,6 +241,7 @@ export const downloadFile = createFileHandler<TransferOption>({
       // remoteTimeOffsetInHours: config.remoteTimeOffsetInHours,
       ignore: config.ignore,
       confirmOverwrite: config.confirmOverwrite,
+      skipUnmodified: config.skipUnmodified,
     };
   },
 });
@@ -213,6 +256,7 @@ export const downloadFolder = createFileHandler<TransferOption>({
       // remoteTimeOffsetInHours: config.remoteTimeOffsetInHours,
       ignore: config.ignore,
       confirmOverwrite: config.confirmOverwrite,
+      skipUnmodified: config.skipUnmodified,
     };
   },
 });

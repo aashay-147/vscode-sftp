@@ -42,6 +42,7 @@ const configScheme = {
   openSsh: Joi.boolean(),
   downloadOnOpen: Joi.boolean().allow('confirm'),
   confirmOverwrite: Joi.boolean().allow('confirm'),
+  skipUnmodified: Joi.boolean(),
 
   ignore: Joi.array()
     .min(0)
@@ -79,6 +80,7 @@ const defaultConfig = {
   openSsh: false,
   downloadOnOpen: false,
   confirmOverwrite: false,
+  skipUnmodified: false,
   ignore: [],
   // ignoreFile: undefined,
   // watcher: {

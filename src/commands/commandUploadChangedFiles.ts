@@ -1,10 +1,9 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
 import { COMMAND_UPLOAD_CHANGEDFILES } from '../constants';
-import { getFileService } from '../modules/serviceManager';
-import { uploadFile, renameRemote, removeRemote } from '../fileHandlers';
+import { TransferDirection } from '../core';
+import { transferSelectedFiles, renameRemote, removeRemote } from '../fileHandlers';
 import { getGitService, GitAPI, Repository, Status, Change } from '../modules/git';
-import { showConfirmMessageModal } from '../host';
 import { checkCommand } from './abstract/createCommand';
 import logger from '../logger';
 import { simplifyPath } from '../helper';
@@ -70,14 +69,7 @@ async function handleCommand(hint: any) {
   const uploads: Change[] = [];
   const renames: Change[] = [];
   const deletes: Change[] = [];
-  let confirmOverwrite = false;
   for (const change of changes) {
-    const fileService = getFileService(change.uri);
-    if (!fileService) {
-      continue;
-    }
-    confirmOverwrite = confirmOverwrite || Boolean(fileService.getConfig().confirmOverwrite);
-
     switch (change.status) {
       case Status.INDEX_MODIFIED:
       case Status.MODIFIED:
@@ -99,28 +91,16 @@ async function handleCommand(hint: any) {
     }
   }
 
-  // One batched confirm for the whole run, then per-uri confirmOverwrite: false
-  // so the per-file gate stays silent. Interim until staged classification
-  // (Phase 2): the wording is status-neutral because nothing here verified that
-  // any destination file actually exists.
-  const uploadCount = creates.length + uploads.length;
-  if (confirmOverwrite && uploadCount > 0) {
-    const ok = await showConfirmMessageModal(
-      `Upload ${uploadCount} changed file${uploadCount > 1 ? 's' : ''}? ` +
-        'Destination files may be replaced.'
-    );
-    if (!ok) {
-      return;
-    }
+  // Aggregated staging (U3.6): one classified counts modal per service when
+  // confirmOverwrite is on, silent skip-identical when skipUnmodified is on,
+  // today's plain fan-out when both are off. Files outside any config are
+  // reported and skipped inside transferSelectedFiles. Renames and deletes
+  // below are separate operations, not overwrites — they run regardless of the
+  // upload decision.
+  const uploadUris = creates.concat(uploads).map(change => change.uri);
+  if (uploadUris.length > 0) {
+    await transferSelectedFiles(uploadUris, TransferDirection.LOCAL_TO_REMOTE);
   }
-
-  await Promise.all(
-    creates.concat(uploads).map(change =>
-      uploadFile(change.uri, { confirmOverwrite: false }).catch(e => {
-        logger.error('Upload failed.', e);
-      })
-    )
-  );
   await Promise.all(
     renames.map(change =>
       renameRemote(change.originalUri, { originPath: change.renameUri!.fsPath }).catch(e => {

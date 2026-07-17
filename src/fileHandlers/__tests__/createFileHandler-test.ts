@@ -69,6 +69,15 @@ describe('createFileHandler option merging (Feature 2 exemption mechanism)', () 
     expect(handle.mock.calls[0][0].confirmOverwrite).toBe(false);
   });
 
+  test('call-site skipUnmodified: false wins over transformOption (force/compare/implicit never stage)', async () => {
+    const { handle, handler } = makeHandler({ skipUnmodified: true });
+
+    await handler(ctx, { skipUnmodified: false });
+
+    expect(handle).toHaveBeenCalledTimes(1);
+    expect(handle.mock.calls[0][0].skipUnmodified).toBe(false);
+  });
+
   test('config confirmOverwrite reaches the handler untouched when the call site is silent', async () => {
     const { handle, handler } = makeHandler({ confirmOverwrite: true });
 

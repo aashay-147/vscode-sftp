@@ -147,12 +147,15 @@ describe('overwrite confirmation (Feature 2)', () => {
     expect(tasks.length).toBe(1);
   });
 
-  test('folder + accepted: exactly ONE prompt, every file collected, no per-file prompts', async () => {
+  test('folder via bare transfer() never prompts — staging owns folder confirmation', async () => {
+    // The staged flow (createTransferHandle) confirms BEFORE transfer() runs
+    // and suppresses per-file prompts via _overwriteConfirmed; transfer()
+    // itself must not prompt for folders, and children must not prompt either.
     fillFs({
       local: { folder: { a: file('a'), b: file('b'), sub: { c: file('c') } } },
       remote: { folder: { a: file('$a'), b: file('$b'), sub: { c: file('$c') } } },
     });
-    modal.mockResolvedValue(true);
+    modal.mockResolvedValue(false); // would abort everything if any prompt fired
 
     const tasks = await runTransfer({
       src: '/local/folder',
@@ -160,25 +163,29 @@ describe('overwrite confirmation (Feature 2)', () => {
       transferOption: { confirmOverwrite: true },
     });
 
-    expect(modal).toHaveBeenCalledTimes(1); // one batched prompt for the whole walk
+    expect(modal).not.toHaveBeenCalled();
     expect(tasks.length).toBe(3);
   });
 
-  test('folder + declined: whole folder skipped, nothing collected', async () => {
+  test('_skipSet drops staged-identical files by ABSOLUTE source path (skipUnmodified)', async () => {
     fillFs({
       local: { folder: { a: file('a'), b: file('b'), sub: { c: file('c') } } },
       remote: { folder: { a: file('$a'), b: file('$b'), sub: { c: file('$c') } } },
     });
-    modal.mockResolvedValue(false);
 
     const tasks = await runTransfer({
       src: '/local/folder',
       target: '/remote/folder',
-      transferOption: { confirmOverwrite: true },
+      transferOption: {
+        confirmOverwrite: true,
+        _overwriteConfirmed: true,
+        _skipSet: new Set(['/local/folder/a', '/local/folder/sub/c']),
+      },
     });
 
-    expect(modal).toHaveBeenCalledTimes(1);
-    expect(tasks.length).toBe(0);
+    expect(modal).not.toHaveBeenCalled();
+    expect(tasks.length).toBe(1); // only b survives
+    expect(tasks[0].localFsPath).toBe('/local/folder/b');
   });
 
   test('Sync path never prompts even with confirmOverwrite on (scope exclusion)', async () => {

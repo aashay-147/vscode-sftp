@@ -50,9 +50,10 @@ async function handleFileSave(uri: vscode.Uri) {
     uri = vscode.Uri.file(fspath);
     logger.info(`[file-save] ${fspath}`);
     try {
-      // Implicit path: uploadOnSave must never prompt, whatever the profile's
-      // confirmOverwrite value — the call-site override wins over transformOption.
-      await uploadFile(uri, { confirmOverwrite: false });
+      // Implicit path: uploadOnSave must never prompt or stage, whatever the
+      // profile's confirmOverwrite/skipUnmodified values — the call-site
+      // override wins over transformOption.
+      await uploadFile(uri, { confirmOverwrite: false, skipUnmodified: false });
     } catch (error) {
       logger.error(error, `download ${fspath}`);
       app.sftpBarItem.updateStatus(StatusBarItem.Status.error);
@@ -77,8 +78,8 @@ async function downloadOnOpen(uri: vscode.Uri) {
     logger.info(`[file-open] ${fspath}`);
     try {
       // Implicit path: downloadOnOpen has its own 'confirm' idiom above; the
-      // overwrite prompt must never stack on top of it.
-      await downloadFile(uri, { confirmOverwrite: false });
+      // overwrite prompt (or a staging walk) must never stack on top of it.
+      await downloadFile(uri, { confirmOverwrite: false, skipUnmodified: false });
     } catch (error) {
       logger.error(error, `download ${fspath}`);
       app.sftpBarItem.updateStatus(StatusBarItem.Status.error);

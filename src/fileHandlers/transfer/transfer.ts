@@ -13,10 +13,17 @@ import logger from '../../logger';
 import { getOpenTextDocuments, showConfirmMessageModal } from '../../host';
 
 interface InternalTransferOption extends FileHandleOption, TransferTaskTransferOption {
-  // Internal sentinel (not a config field): set on children during a folder
-  // walk once the single top-level overwrite confirmation has been accepted, so
+  // Internal sentinel (not a config field): set once the staged counts modal
+  // (or a folder walk's top level) has confirmed the whole operation, so
   // per-file prompts are suppressed for the rest of that walk.
   _overwriteConfirmed?: boolean;
+  // Internal (not a config field): ABSOLUTE source fsPaths staged as identical
+  // — transferWithType drops them without collecting a task (skipUnmodified).
+  _skipSet?: Set<string>;
+  // Internal (not a config field): set by the *.to.allProfiles commands so the
+  // staged modal offers [Transfer]/[Skip This Profile]/[Cancel remaining] and
+  // never Review (compare-view actions bind to the ACTIVE profile only).
+  _multiProfileFlow?: boolean;
 }
 
 type ExternalTransferOption<T extends InternalTransferOption> = Pick<
@@ -85,24 +92,10 @@ async function transferFolder(
     return;
   }
 
-  // Overwrite confirmation for a folder transfer: show ONE modal for the whole
-  // walk, at the top-level folder only (`_overwriteConfirmed` not yet set by a
-  // parent). A per-file prompt here would fire once per file — unusable, and a
-  // destination round-trip per file. On accept, children carry the
-  // `_overwriteConfirmed` sentinel so step-3's per-file check is bypassed. The
-  // message is status-neutral by design: `transferFolder` only sees this level's
-  // entries (nested contents get the sentinel and are never counted, and dir
-  // entries would be miscounted as files), so an exact "N files" figure would
-  // understate risk — a recursive pre-walk to fix that reintroduces the
-  // doubled-listing cost this feature avoids.
-  if (transferOption.confirmOverwrite && !transferOption._overwriteConfirmed) {
-    const ok = await showConfirmMessageModal(
-      'Overwrite existing files in this folder? Existing destination files may be replaced.'
-    );
-    if (!ok) {
-      return;
-    }
-  }
+  // Folder-level overwrite confirmation lives in the staged flow
+  // (createTransferHandle → stageAndConfirmFolderTransfer), which runs BEFORE
+  // this walk and sets `_overwriteConfirmed`. By the time we get here the
+  // operation is already confirmed (or the flags are off).
 
   // Need this to make sure file can correct transfer
   await targetFs.ensureDir(targetFsPath);
@@ -123,7 +116,7 @@ async function transferFolder(
             ...config.transferOption,
             mtime: file.mtime,
             atime: file.atime,
-            // The folder-level confirmation above (or its absence) covers every
+            // The staged confirmation (or the flags being off) covers every
             // descendant; suppress per-file prompts for the rest of this walk.
             _overwriteConfirmed: true,
           },
@@ -181,6 +174,12 @@ async function transferWithType(
       break;
     case FileType.File:
     case FileType.SymbolicLink:
+      // Staged as identical (skipUnmodified): drop the file before any side
+      // effect — no save-before-upload, no task collected. Keyed by absolute
+      // source path because that's all this function ever sees.
+      if (config.transferOption._skipSet && config.transferOption._skipSet.has(config.srcFsPath)) {
+        return;
+      }
       if (config.ensureDirExist) {
         const { targetFs, targetFsPath } = config;
         await targetFs.ensureDir(targetFs.pathResolver.dirname(targetFsPath));

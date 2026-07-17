@@ -41,6 +41,7 @@ interface ServiceOption {
   openSsh: boolean;
   downloadOnOpen: boolean | 'confirm';
   confirmOverwrite: boolean | 'confirm';
+  skipUnmodified: boolean;
   filePerm?: number;
   dirPerm?: number;
   syncOption: {
@@ -154,6 +155,7 @@ function getHostInfo(config) {
     'openSsh',
     'downloadOnOpen',
     'confirmOverwrite',
+    'skipUnmodified',
     'ignore',
     'ignoreFile',
     'watcher',

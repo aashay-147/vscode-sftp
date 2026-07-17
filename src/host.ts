@@ -104,6 +104,32 @@ export async function showConfirmMessageModal(message: string, confirmLabel: str
   return result === confirmLabel;
 }
 
+// Modal with an arbitrary set of action buttons (plus VS Code's built-in
+// Cancel). Resolves to the chosen label, or undefined on Cancel/dismiss.
+export async function showModalChoices(
+  message: string,
+  ...actions: string[]
+): Promise<string | undefined> {
+  return vscode.window.showWarningMessage(message, { modal: true }, ...actions);
+}
+
+// Cancellable indeterminate progress notification. The task receives a
+// callback to update the message and an isCancelled probe.
+export function showCancellableProgress<T>(
+  title: string,
+  task: (report: (message: string) => void, isCancelled: () => boolean) => Promise<T>
+): Thenable<T> {
+  return vscode.window.withProgress(
+    {
+      location: vscode.ProgressLocation.Notification,
+      title,
+      cancellable: true,
+    },
+    (progress, token) =>
+      task(message => progress.report({ message }), () => token.isCancellationRequested)
+  );
+}
+
 export function showOpenDialog(options: vscode.OpenDialogOptions) {
   return vscode.window.showOpenDialog(options);
 }

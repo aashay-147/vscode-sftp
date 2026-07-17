@@ -125,13 +125,26 @@ export async function classifyFile(
   return classifyPair(local, remote, location, compareMtime);
 }
 
-async function collectFiles(
+// Optional walk instrumentation for long-running collects (staging): a
+// cancellation probe checked once per directory level, and a per-file tick
+// for indeterminate progress counters.
+export interface WalkControl {
+  isCancelled(): boolean;
+  onFile?(): void;
+}
+
+export async function collectFiles(
   fileSystem: FileSystem,
   root: string,
   dir: string,
   ignore: FileHandleOption['ignore'],
-  out: Map<string, FileEntry>
+  out: Map<string, FileEntry>,
+  control?: WalkControl
 ): Promise<void> {
+  if (control && control.isCancelled()) {
+    return;
+  }
+
   let fileEntries: FileEntry[];
   try {
     fileEntries = await fileSystem.list(dir);
@@ -148,10 +161,13 @@ async function collectFiles(
 
       switch (fileEntry.type) {
         case FileType.Directory:
-          await collectFiles(fileSystem, root, fileEntry.fspath, ignore, out);
+          await collectFiles(fileSystem, root, fileEntry.fspath, ignore, out, control);
           break;
         case FileType.File:
         case FileType.SymbolicLink:
+          if (control && control.onFile) {
+            control.onFile();
+          }
           out.set(
             upath.relative(upath.normalize(root), upath.normalize(fileEntry.fspath)),
             fileEntry

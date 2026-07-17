@@ -8,8 +8,8 @@ export default checkFileCommand({
   getFileTarget: uriFromExplorerContextOrEditorContext,
 
   async handleFile(ctx) {
-    // Force download never prompts, even with confirmOverwrite on (see the
+    // Force download never prompts, never stages, never skips (see the
     // force-upload command for why the call-site override wins).
-    await download(ctx, { ignore: null, confirmOverwrite: false });
+    await download(ctx, { ignore: null, confirmOverwrite: false, skipUnmodified: false });
   },
 });

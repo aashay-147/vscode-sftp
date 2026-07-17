@@ -6,6 +6,7 @@ import {
 } from '../../constants';
 import { reportError } from '../../helper';
 import { handleCtxFromUri, allHandleCtxFromUri, FileHandlerContext } from '../../fileHandlers';
+import { StagedTransferCancelledError } from '../../fileHandlers/transfer/stagedTransfer';
 import { getFileService } from '../../modules/serviceManager';
 import Command from './command';
 
@@ -29,6 +30,11 @@ interface CommandOption extends BaseCommandOption {
 interface FileCommandOption extends BaseCommandOption {
   handleFile: (ctx: FileHandlerContext) => Promise<unknown>;
   getFileTarget: (...args: any[]) => undefined | Uri | Uri[] | Promise<undefined | Uri | Uri[]>;
+  // Optional multi-select hook: when the command receives more than one target
+  // it takes over the whole selection (aggregated staging — one counts modal
+  // per service instead of a per-uri fan-out). Commands without it keep the
+  // per-uri fan-out below.
+  handleMulti?: (uris: Uri[]) => Promise<unknown>;
 }
 
 function checkType<T>() {
@@ -73,6 +79,18 @@ export function createFileCommand(commandOption: FileCommandOption & { name: str
       }
 
       const targetList: Uri[] = Array.isArray(target) ? target : [target];
+
+      if (targetList.length > 1 && commandOption.handleMulti) {
+        try {
+          await commandOption.handleMulti(targetList);
+        } catch (error) {
+          if (!(error instanceof StagedTransferCancelledError)) {
+            reportError(error);
+          }
+        }
+        return;
+      }
+
       const run = async (uri: Uri) => {
         try {
           await commandOption.handleFile(handleCtxFromUri(uri));
@@ -126,6 +144,11 @@ export function createFileMultiCommand(commandOption: FileCommandOption & { name
             await Promise.all(ctxs.map(commandOption.handleFile));
           }
         } catch (error) {
+          if (error instanceof StagedTransferCancelledError) {
+            // user chose Cancel in a staged multi-profile modal — stop the
+            // remaining profiles for this target quietly
+            return;
+          }
           reportError(error);
         }
       };

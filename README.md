@@ -69,18 +69,35 @@ in [.planning/fork-sftp-plan.md](.planning/fork-sftp-plan.md).
 
 ### 🚧 In progress
 
-- **Upload/Download overwrite confirmation** — a per-profile `confirmOverwrite`
-  setting (`false` by default, or `true`/`"confirm"`) that prompts before an
-  explicit upload/download overwrites an existing destination file, instead of
-  today's silent one-click overwrite. A folder transfer asks once for the whole
-  walk. Sync, Force, the Compare-view actions, and Edit-in-Local are unaffected.
-  Implemented on `integration`; pending review.
+- **Staged Transfer Workflow (overwrite confirmation + diff-only transfer)** — two
+  per-profile settings, off by default, that govern explicit uploads/downloads:
+  - `confirmOverwrite` (`true`/`"confirm"`): a single-file transfer prompts before
+    overwriting an existing destination file. A folder/project/multi-file transfer
+    first classifies both sides (cancellable "checking" notification) and shows one
+    counts modal — *N new, N will be overwritten (modified / timestamp-only),
+    N identical* — with **Transfer**, **Review in Compare View** (loads the
+    classification into Folder Compare and aborts; act from there, then Clear), and
+    **Cancel**. When nothing would be overwritten, the transfer proceeds with a
+    passive summary instead of a modal. `Upload to All Profiles` shows one modal per
+    profile with **Skip This Profile** / **Cancel** (no Review — the Compare view
+    binds to the active profile).
+  - `skipUnmodified` (`true`): explicit folder/project/multi-file transfers skip
+    files already identical on the destination (same size+mtime basis as Sync and
+    Folder Compare; size-only on FTP — and note the staging walk is a full recursive
+    listing, which is slow on large FTP trees). Single-file commands still transfer
+    their one named file.
+
+  Both flags stay orthogonal: with `skipUnmodified` off, identical files still
+  transfer (explicit transfer means "force this exact state"). With both off,
+  behavior is byte-for-byte the historical silent one-click transfer with zero extra
+  round-trips. Sync, Force (Alt-click), the Compare-view actions, Edit-in-Local, and
+  the implicit paths (uploadOnSave, downloadOnOpen, watcher auto-upload) never prompt,
+  never stage, never skip. Files added or changed between the check and the transfer
+  move unconfirmed (advisory guard, not a lock). Third-party keybindings invoking the
+  hidden `sftp.upload`/`sftp.download` commands will hit the same gates when the flag
+  is on. Implemented on `integration`; pending review.
 
 ### 📋 Upcoming
-
-- **Upload/Download diff-only transfer** — skip files already identical on the
-  destination during explicit upload/download, the way `Sync` already does, to cut
-  needless transfer time.
 - **Multi-threaded / parallel upload, download & checks** — pool multiple SFTP
   connections per profile instead of serializing every transfer over one channel, and
   bring folder-compare's directory walk under the same concurrency control.

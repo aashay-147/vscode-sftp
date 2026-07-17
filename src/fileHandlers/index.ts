@@ -1,4 +1,5 @@
 export * from './transfer';
+export * from './multiFileTransfer';
 export * from './remove';
 export * from './diff';
 export * from './compare';

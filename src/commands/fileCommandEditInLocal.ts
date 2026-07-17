@@ -10,8 +10,8 @@ export default checkFileCommand({
 
   async handleFile(ctx) {
     // Edit-in-Local intentionally replaces the local copy; prompting to
-    // overwrite it would defeat the command.
-    await downloadFile(ctx, { ignore: null, confirmOverwrite: false });
+    // overwrite it (or skip-checking it) would defeat the command.
+    await downloadFile(ctx, { ignore: null, confirmOverwrite: false, skipUnmodified: false });
     await showTextDocument(ctx.target.localUri, { preview: true });
   },
 });

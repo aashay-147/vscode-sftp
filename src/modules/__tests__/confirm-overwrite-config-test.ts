@@ -1,9 +1,20 @@
-// Feature 2 — config validation for `confirmOverwrite`. Mirrors the
-// `downloadOnOpen` shape: boolean or the string 'confirm', optional.
+// Features 2+3 — config validation for `confirmOverwrite` (boolean or the
+// string 'confirm', mirroring `downloadOnOpen`) and `skipUnmodified`
+// (plain boolean). Both optional.
 
 import { validateConfig } from '../config';
 
 const base = { host: 'host', username: 'username', remotePath: '/' };
+
+describe('skipUnmodified config validation', () => {
+  test.each([[false], [true]])('accepts %p', value => {
+    expect(validateConfig({ ...base, skipUnmodified: value })).toBeFalsy();
+  });
+
+  test('rejects a string', () => {
+    expect(validateConfig({ ...base, skipUnmodified: 'confirm' })).toBeTruthy();
+  });
+});
 
 describe('confirmOverwrite config validation', () => {
   test.each([[false], [true], ['confirm']])('accepts %p', value => {

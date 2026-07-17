@@ -75,6 +75,11 @@
         "description": "Prompt before overwriting an existing destination file on an explicit upload/download. `true` and `\"confirm\"` are synonyms. Default false keeps silent one-click overwrite. Does not affect Sync, Force, or Edit-in-Local.",
         "default": false
       },
+      "skipUnmodified": {
+        "type": "boolean",
+        "description": "Skip files that are already identical on the destination (same size + mtime basis as Sync and Folder Compare; size-only on FTP) during explicit folder/project/multi-file upload/download. Single-file commands, Sync and Force are unaffected. Note: on large trees this runs a full recursive listing of both sides before transferring — on FTP that listing is serial and can be slow.",
+        "default": false
+      },
       "syncOption": {
         "type": "object",
         "description": "Configuration the behavior of `Sync` command.",
