@@ -63,5 +63,8 @@ export async function activate(context: vscode.ExtensionContext) {
 
 export function deactivate() {
   fileActivityMonitor.destory();
+  // Drop any transfer queues first (including ones left paused) so pending
+  // run() promises resolve and nothing dangles across the reload.
+  getAllFileService().forEach(fileService => fileService.cancelTransferTasks());
   getAllFileService().forEach(disposeFileService);
 }

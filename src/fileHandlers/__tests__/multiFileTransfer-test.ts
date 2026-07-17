@@ -32,6 +32,11 @@ jest.mock('../../host', () => ({
   showModalChoices: jest.fn(),
   showInformationMessage: jest.fn(),
   executeCommand: jest.fn(),
+  // run the batch inline — the vscode catch-all mock's withProgress never
+  // settles, so the real implementation would hang the fan-out paths
+  showTransferProgress: jest.fn((_title, task) =>
+    task(() => undefined, () => undefined)
+  ),
 }));
 
 import app from '../../app';

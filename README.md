@@ -104,6 +104,19 @@ in [.planning/fork-sftp-plan.md](.planning/fork-sftp-plan.md).
   hidden `sftp.upload`/`sftp.download` commands will hit the same gates when the flag
   is on. Implemented on `integration`; pending review.
 
+- **Transfer progress & pause/resume/stop** — explicit multi-file operations (sync,
+  folder/project transfers, multi-select) show a determinate per-file progress
+  notification (*12/40 — file.js*) with a **Cancel** button that stops that operation
+  only (queued files dropped; in-flight files finish — a clean stop between files).
+  While such an operation runs, a status-bar control pauses/resumes **all** transfers
+  globally (paused operations keep their queue and show *Paused — 12/40*); the same is
+  available as `SFTP: Pause All Transfers` / `SFTP: Resume All Transfers`, and
+  `SFTP: Cancel All Transfers (Stop)` remains the global stop. Folder Compare's walk
+  shows a cancellable live counter (indeterminate — the total isn't known until the
+  parallel-transfer work lands). Single-file transfers and the implicit paths
+  (uploadOnSave, downloadOnOpen, watcher) keep the plain status-bar spinner and never
+  pop notifications. Implemented on `integration`; pending review.
+
 ### 📋 Upcoming
 - **Multi-threaded / parallel upload, download & checks** — pool multiple SFTP
   connections per profile instead of serializing every transfer over one channel, and

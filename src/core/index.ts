@@ -1,6 +1,11 @@
 import * as fileOperations from './fileBaseOperations';
 import upath from './upath';
-import FileService, { WatcherService, FileServiceConfig, ServiceConfig } from './fileService';
+import FileService, {
+  WatcherService,
+  FileServiceConfig,
+  ServiceConfig,
+  TransferScheduler,
+} from './fileService';
 import UResource, { Resource } from './uResource';
 import Scheduler from './scheduler';
 import TransferTask from './transferTask';
@@ -16,6 +21,7 @@ export {
   WatcherService,
   FileServiceConfig,
   ServiceConfig,
+  TransferScheduler,
   UResource,
   Resource,
   Scheduler,

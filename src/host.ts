@@ -130,6 +130,32 @@ export function showCancellableProgress<T>(
   );
 }
 
+// Cancellable determinate progress notification for a transfer operation.
+// The task receives a reporter for {message, increment} updates and an
+// onCancel registrar; the notification closes when the task settles.
+export function showTransferProgress<T>(
+  title: string,
+  task: (
+    report: (update: { message?: string; increment?: number }) => void,
+    onCancel: (callback: () => void) => void
+  ) => Promise<T>
+): Thenable<T> {
+  return vscode.window.withProgress(
+    {
+      location: vscode.ProgressLocation.Notification,
+      title,
+      cancellable: true,
+    },
+    (progress, token) =>
+      task(
+        update => progress.report(update),
+        callback => {
+          token.onCancellationRequested(() => callback());
+        }
+      )
+  );
+}
+
 export function showOpenDialog(options: vscode.OpenDialogOptions) {
   return vscode.window.showOpenDialog(options);
 }

@@ -17,6 +17,10 @@ export const COMMAND_TOGGLE_OUTPUT = 'sftp.toggleOutput';
 export const COMMAND_CONFIG = 'sftp.config';
 export const COMMAND_SET_PROFILE = 'sftp.setProfile';
 export const COMMAND_CANCEL_ALL_TRANSFER = 'sftp.cancelAllTransfer';
+// global pause/resume for scheduler-driven transfers (Feature 5);
+// COMMAND_CANCEL_ALL_TRANSFER above is the matching global stop
+export const COMMAND_TRANSFER_PAUSE = 'sftp.transfer.pause';
+export const COMMAND_TRANSFER_RESUME = 'sftp.transfer.resume';
 export const COMMAND_OPEN_CONNECTION_IN_TERMINAL = 'sftp.openConnectInTerminal';
 
 export const COMMAND_FORCE_UPLOAD = 'sftp.forceUpload';

@@ -1,7 +1,9 @@
+import * as path from 'path';
 import { FileType } from '../../core';
 import { refreshRemoteExplorer } from '../shared';
 import createFileHandler, { FileHandlerContext } from '../createFileHandler';
 import { transfer, sync, TransferOption, SyncOption, TransferDirection } from './transfer';
+import { runTransferScheduler } from './progress';
 import {
   StagedTransferCancelledError,
   lstatTypeOrNull,
@@ -71,7 +73,16 @@ function createTransferHandle(direction: TransferDirection) {
     }
     // todo: abort at here. we should stop collect task
     await transfer(transferConfig, t => scheduler.add(t));
-    await scheduler.run();
+    if (option._noProgress) {
+      await scheduler.run();
+    } else {
+      const verb =
+        direction === TransferDirection.LOCAL_TO_REMOTE ? 'Uploading' : 'Downloading';
+      const sourceName = path.basename(
+        direction === TransferDirection.LOCAL_TO_REMOTE ? localFsPath : remoteFsPath
+      );
+      await runTransferScheduler(scheduler, `SFTP: ${verb} '${sourceName}'`);
+    }
   };
 }
 
@@ -99,7 +110,10 @@ export const sync2Remote = createFileHandler<SyncOption>({
       },
       t => scheduler.add(t)
     );
-    await scheduler.run();
+    await runTransferScheduler(
+      scheduler,
+      `SFTP: Syncing '${path.basename(localFsPath)}' to remote`
+    );
   },
   transformOption() {
     const config = this.config;
@@ -139,7 +153,10 @@ export const sync2Local = createFileHandler<SyncOption>({
       },
       t => scheduler.add(t)
     );
-    await scheduler.run();
+    await runTransferScheduler(
+      scheduler,
+      `SFTP: Syncing '${path.basename(localFsPath)}' from remote`
+    );
   },
   transformOption() {
     const config = this.config;

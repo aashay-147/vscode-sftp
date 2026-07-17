@@ -102,7 +102,17 @@
       },
       {
         "command": "sftp.cancelAllTransfer",
-        "title": "Cancel All Transfers",
+        "title": "Cancel All Transfers (Stop)",
+        "category": "SFTP"
+      },
+      {
+        "command": "sftp.transfer.pause",
+        "title": "Pause All Transfers",
+        "category": "SFTP"
+      },
+      {
+        "command": "sftp.transfer.resume",
+        "title": "Resume All Transfers",
         "category": "SFTP"
       },
       {
@@ -461,6 +471,14 @@
         },
         {
           "command": "sftp.cancelAllTransfer",
+          "when": "sftp.enabled"
+        },
+        {
+          "command": "sftp.transfer.pause",
+          "when": "sftp.enabled"
+        },
+        {
+          "command": "sftp.transfer.resume",
           "when": "sftp.enabled"
         },
         {

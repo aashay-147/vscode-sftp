@@ -109,12 +109,20 @@ export interface WatcherService {
   dispose(watcherBase: string): void;
 }
 
-interface TransferScheduler {
+export interface TransferScheduler {
   // readonly _scheduler: Scheduler;
   size: number;
   add(x: TransferTask): void;
   run(): Promise<void>;
+  // Stop: drop queued tasks; in-flight tasks run to completion, nothing new
+  // starts. Distinct from pause, which keeps the queue intact for resume.
   stop(): void;
+  // Pause/resume (Feature 5): pause stops new tasks from starting (in-flight
+  // tasks finish normally, the queue is kept); resume drains the queue again.
+  pause(): void;
+  resume(): void;
+  onTaskStart(listener: (task: TransferTask) => void): void;
+  onTaskDone(listener: (err: Error | null, task: TransferTask) => void): void;
 }
 
 type ConfigValidator = (x: any) => { message: string };
@@ -447,6 +455,14 @@ export default class FileService {
     this._pendingTransferTasks.clear();
   }
 
+  pauseTransferTasks() {
+    this._transferSchedulers.forEach(transfer => transfer.pause());
+  }
+
+  resumeTransferTasks() {
+    this._transferSchedulers.forEach(transfer => transfer.resume());
+  }
+
   beforeTransfer(listener: (task: TransferTask) => void) {
     this._eventEmitter.on(Event.BEFORE_TRANSFER, listener);
   }
@@ -472,6 +488,10 @@ export default class FileService {
 
     let runningPromise: Promise<void> | null = null;
     let isStopped: boolean = false;
+    // Resolves the in-flight run() exactly once; needed so stop() can finish a
+    // PAUSED run with no in-flight tasks (the scheduler only emits idle from a
+    // task completion, which will never come in that state).
+    let finishRun: (() => void) | null = null;
     const transferScheduler: TransferScheduler = {
       get size() {
         return scheduler.size;
@@ -479,6 +499,29 @@ export default class FileService {
       stop() {
         isStopped = true;
         scheduler.empty();
+        // un-pause so any in-flight tasks drain through to idle...
+        scheduler.start();
+        // ...and if nothing is in flight (paused queue, tasks all finished),
+        // no completion event will ever fire — finish the run directly.
+        if (scheduler.pendingCount <= 0 && finishRun) {
+          finishRun();
+        }
+      },
+      pause() {
+        scheduler.pause();
+      },
+      resume() {
+        // only meaningful once run() started the scheduler; resuming a
+        // still-collecting scheduler would begin transfers mid-collect
+        if (runningPromise) {
+          scheduler.start();
+        }
+      },
+      onTaskStart(listener) {
+        scheduler.onTaskStart(listener as (task) => void);
+      },
+      onTaskDone(listener) {
+        scheduler.onTaskDone(listener as (err, task) => void);
       },
       add(task: TransferTask) {
         if (isStopped) {
@@ -499,10 +542,16 @@ export default class FileService {
 
         if (!runningPromise) {
           runningPromise = new Promise(resolve => {
-            scheduler.onIdle(() => {
+            finishRun = () => {
               runningPromise = null;
+              finishRun = null;
               fileService._removeScheduler(transferScheduler);
               resolve();
+            };
+            scheduler.onIdle(() => {
+              if (finishRun) {
+                finishRun();
+              }
             });
             scheduler.start();
           });

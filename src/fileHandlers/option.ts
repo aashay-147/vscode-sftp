@@ -15,4 +15,9 @@ export interface FileHandleOption {
   // would fire on every uploadOnSave of an ignored file and per ignored
   // subfolder under Sync.
   notifyIgnored?: boolean;
+  // Internal, call-site only (Feature 5): suppress the per-operation progress
+  // notification. Set on implicit paths (uploadOnSave, downloadOnOpen, watcher
+  // autoUpload, Edit in Local) so background transfers keep the plain
+  // status-bar spinner and never pop UI.
+  _noProgress?: boolean;
 }

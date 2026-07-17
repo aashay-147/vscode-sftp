@@ -3,6 +3,7 @@ import { Uri } from 'vscode';
 import app from '../app';
 import { upath, FileSystem, FileEntry, FileStats, FileService, FileType } from '../core';
 import { reportError } from '../helper';
+import { showCancellableProgress } from '../host';
 import { FileHandleOption } from './option';
 import createFileHandler, { handleCtxFromUri, FileHandlerContext } from './createFileHandler';
 
@@ -191,10 +192,31 @@ export const compareFolders = createFileHandler<FileHandleOption>({
 
     const localFiles = new Map<string, FileEntry>();
     const remoteFiles = new Map<string, FileEntry>();
-    await Promise.all([
-      collectFiles(localFs, localFsPath, localFsPath, option.ignore, localFiles),
-      collectFiles(remoteFs, remoteFsPath, remoteFsPath, option.ignore, remoteFiles),
-    ]);
+    // Cancellable, indeterminate walk progress (Feature 5): the total isn't
+    // known without a separate counting pass, so this stays a live counter
+    // until Feature 4 routes the walk through the transfer scheduler.
+    const cancelled = await showCancellableProgress(
+      `SFTP: Comparing '${path.basename(localFsPath)}'`,
+      async (report, isCancelled) => {
+        let seen = 0;
+        const control = {
+          isCancelled,
+          onFile() {
+            seen += 1;
+            report(`${seen} files checked`);
+          },
+        };
+        await Promise.all([
+          collectFiles(localFs, localFsPath, localFsPath, option.ignore, localFiles, control),
+          collectFiles(remoteFs, remoteFsPath, remoteFsPath, option.ignore, remoteFiles, control),
+        ]);
+        return isCancelled();
+      }
+    );
+    if (cancelled) {
+      // partial walk — keep whatever result is currently shown
+      return;
+    }
 
     const entries: CompareEntry[] = [];
     localFiles.forEach((localEntry, relPath) => {

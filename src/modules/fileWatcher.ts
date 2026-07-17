@@ -38,7 +38,7 @@ function doUpload() {
       // Implicit path: watcher autoUpload fires on every debounce tick and must
       // never prompt — and never run a silent staging walk per tick — whatever
       // the profile's confirmOverwrite/skipUnmodified values.
-      await upload(uri, { confirmOverwrite: false, skipUnmodified: false });
+      await upload(uri, { confirmOverwrite: false, skipUnmodified: false, _noProgress: true });
     } catch (error) {
       logger.error(error, `upload ${fspath}`);
       app.sftpBarItem.updateStatus(StatusBarItem.Status.error);

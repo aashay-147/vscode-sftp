@@ -16,6 +16,14 @@ import {
   TransferDirection,
 } from '../core';
 import { reportError } from '../helper';
+import { showTransferProgress } from '../host';
+import {
+  operationEnded,
+  operationProgressed,
+  operationStarted,
+  progressMessage,
+  TransferOperation,
+} from '../ui/transferControls';
 import { handleCtxFromUri, FileHandlerContext } from './createFileHandler';
 import { classifyPair, deriveCompareMtime, CompareEntry, CompareStatus } from './compare';
 import { uploadFile, downloadFile } from './transfer';
@@ -28,6 +36,42 @@ async function lstatOrNull(fileSystem: FileSystem, fsPath: string): Promise<File
     return await fileSystem.lstat(fsPath);
   } catch (error) {
     return null;
+  }
+}
+
+// Determinate progress over a concurrent per-file handler fan-out (Feature 5).
+// Each job is a full single-file handler call with its own one-task scheduler,
+// so unlike a folder transfer there is no shared queue: Cancel falls back to
+// the service-wide stop, and Pause has nothing queued to hold — an accepted
+// limitation of the multi-select path.
+async function runBatchWithProgress(
+  title: string,
+  fileService: FileService,
+  jobs: Array<() => Promise<unknown>>
+): Promise<void> {
+  if (jobs.length <= 1) {
+    await Promise.all(jobs.map(job => job()));
+    return;
+  }
+
+  const op: TransferOperation = { done: 0, total: jobs.length };
+  operationStarted(op);
+  try {
+    await showTransferProgress(`${title} (${jobs.length} files)`, (report, onCancel) => {
+      op.report = report;
+      onCancel(() => fileService.cancelTransferTasks());
+      return Promise.all(
+        jobs.map(job =>
+          job().then(() => {
+            op.done += 1;
+            report({ increment: 100 / op.total, message: progressMessage(op) });
+            operationProgressed();
+          })
+        )
+      );
+    });
+  } finally {
+    operationEnded(op);
   }
 }
 
@@ -70,9 +114,12 @@ export async function transferSelectedFiles(
     const skipUnmodified = Boolean(config.skipUnmodified);
 
     if (!confirmOverwrite && !skipUnmodified) {
-      // flags off: today's plain concurrent per-uri fan-out, byte-for-byte
-      await Promise.all(
-        ctxs.map(ctx => handler(ctx, baseOption).catch(error => reportError(error)))
+      // flags off: today's plain concurrent per-uri fan-out, byte-for-byte —
+      // now with a batch counter over the settled handler calls
+      await runBatchWithProgress(
+        `SFTP: ${fromLocal ? 'Uploading' : 'Downloading'} selected files`,
+        fileService,
+        ctxs.map(ctx => () => handler(ctx, baseOption).catch(error => reportError(error)))
       );
       continue;
     }
@@ -218,22 +265,23 @@ async function transferClassifiedFiles(
 
   const skipSet = decision.skipSet;
   const handler = fromLocal ? uploadFile : downloadFile;
-  await Promise.all(
-    files
-      .filter(file => {
-        if (skipSet && skipSet.has(file.srcFsPath)) {
-          return false;
-        }
-        // destination-only files are never part of the transfer set
-        return !(file.entry && file.entry.status === destOnlyStatus);
-      })
-      .map(file =>
-        handler(file.ctx, {
-          ...baseOption,
-          // the batch modal (or fast path) already covered this transfer
-          confirmOverwrite: false,
-          skipUnmodified: false,
-        }).catch(error => reportError(error))
-      )
+  const transferSet = files.filter(file => {
+    if (skipSet && skipSet.has(file.srcFsPath)) {
+      return false;
+    }
+    // destination-only files are never part of the transfer set
+    return !(file.entry && file.entry.status === destOnlyStatus);
+  });
+  await runBatchWithProgress(
+    `SFTP: ${fromLocal ? 'Uploading' : 'Downloading'} selected files`,
+    args.fileService,
+    transferSet.map(file => () =>
+      handler(file.ctx, {
+        ...baseOption,
+        // the batch modal (or fast path) already covered this transfer
+        confirmOverwrite: false,
+        skipUnmodified: false,
+      }).catch(error => reportError(error))
+    )
   );
 }
