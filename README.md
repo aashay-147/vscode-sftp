@@ -117,13 +117,21 @@ in [.planning/fork-sftp-plan.md](.planning/fork-sftp-plan.md).
   (uploadOnSave, downloadOnOpen, watcher) keep the plain status-bar spinner and never
   pop notifications. Implemented on `integration`; pending review.
 
+- **Multi-threaded / parallel upload, download & checks** — a per-profile
+  `maxConnections` setting (default `1`) pools multiple SFTP connections so
+  transfers, syncs, and folder walks genuinely run in parallel instead of
+  serializing over one shared channel. The pool grows lazily — the first
+  connection opens as always, extra ones only while enough operations are
+  actually in flight — and is capped by `concurrency` and a hard limit of 8.
+  Interactive credentials (password/passphrase prompts) are asked once and
+  reused for the additional connections. FTP is unaffected (its protocol
+  serializes on one control connection), and `maxConnections: 1` — the default —
+  is byte-for-byte the historical single-connection behavior. Folder Compare and
+  the staging walk also bound their concurrent directory listings to
+  `concurrency` so a large tree can't flood the pool. Implemented on
+  `integration`; pending review.
+
 ### 📋 Upcoming
-- **Multi-threaded / parallel upload, download & checks** — pool multiple SFTP
-  connections per profile instead of serializing every transfer over one channel, and
-  bring folder-compare's directory walk under the same concurrency control.
-- **Progress indication for compare & sync** — a real progress notification for
-  these two multi-file operations, with pause/resume/stop controls, in place of
-  the current blunt status-bar spinner.
 - **Password security in config** — move stored passwords out of plaintext
   `.vscode/sftp.json` and into VS Code's `SecretStorage`, with a migration path for
   existing configs.

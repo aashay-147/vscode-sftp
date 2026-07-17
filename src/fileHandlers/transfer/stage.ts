@@ -15,6 +15,7 @@ import {
   CompareResult,
   CompareStatus,
   WalkControl,
+  WalkLimit,
 } from '../compare';
 
 export interface StageCounts {
@@ -57,6 +58,8 @@ export async function stageFolderTransfer(args: {
   compareMtime: boolean;
   serviceName?: string;
   control?: WalkControl;
+  // bound on concurrent list() calls per side during the walk (Feature 4)
+  concurrency?: number;
 }): Promise<StagePlan | null> {
   const {
     localFs,
@@ -68,13 +71,23 @@ export async function stageFolderTransfer(args: {
     compareMtime,
     serviceName,
     control,
+    concurrency,
   } = args;
 
+  const baseControl: WalkControl = control || { isCancelled: () => false };
   const localFiles = new Map<string, FileEntry>();
   const remoteFiles = new Map<string, FileEntry>();
+  // each side gets its own limit — the local walk must not queue behind slow
+  // remote directory reads
   await Promise.all([
-    collectFiles(localFs, localFsPath, localFsPath, ignore, localFiles, control),
-    collectFiles(remoteFs, remoteFsPath, remoteFsPath, ignore, remoteFiles, control),
+    collectFiles(localFs, localFsPath, localFsPath, ignore, localFiles, {
+      ...baseControl,
+      listLimit: new WalkLimit(concurrency || 1),
+    }),
+    collectFiles(remoteFs, remoteFsPath, remoteFsPath, ignore, remoteFiles, {
+      ...baseControl,
+      listLimit: new WalkLimit(concurrency || 1),
+    }),
   ]);
 
   if (control && control.isCancelled()) {

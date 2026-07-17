@@ -310,6 +310,11 @@
         "type": "number",
         "description": "Concurrency number."
       },
+      "maxConnections": {
+        "type": "number",
+        "description": "Maximum number of SFTP connections used in parallel for transfers and folder walks. Defaults to 1 (single shared connection, the historical behavior). The effective pool size is capped by concurrency and by a hard limit of 8; ignored for FTP. Extra connections are only opened while enough operations are actually in flight.",
+        "default": 1
+      },
       "sshCustomParams": {
         "type": "string",
         "description": "Extra parameters append to SSH command using by \"Open SSH in Terminal\"",

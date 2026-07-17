@@ -42,6 +42,10 @@ interface ServiceOption {
   downloadOnOpen: boolean | 'confirm';
   confirmOverwrite: boolean | 'confirm';
   skipUnmodified: boolean;
+  // Feature 4: size of the per-profile remote connection pool. Default 1 keeps
+  // the historical single-shared-connection behavior; the effective pool size
+  // is min(maxConnections, concurrency, MAX_POOL_SIZE) and always 1 for FTP.
+  maxConnections: number;
   filePerm?: number;
   dirPerm?: number;
   syncOption: {
@@ -168,6 +172,10 @@ function getHostInfo(config) {
     'ignoreFile',
     'watcher',
     'concurrency',
+    // pool size must not enter the connect-option hash — a profile switch that
+    // only changes maxConnections would otherwise create a second live
+    // connection set to the same host (see remoteFs fsTable)
+    'maxConnections',
     'syncOption',
     'sshConfigPath',
   ];
@@ -178,6 +186,29 @@ function getHostInfo(config) {
     }
     return obj;
   }, {});
+}
+
+// Hard ceiling on the connection pool, independent of config. Servers commonly
+// cap sessions per user (MaxSessions defaults to 10 in OpenSSH); staying well
+// below that keeps a second window / reconnect from being refused.
+const MAX_POOL_SIZE = 8;
+
+// Effective pool size for a resolved service config (Feature 4). Exported for
+// tests. More parallel connections than transfer workers (`concurrency`) can
+// never be used, so the smaller of the two wins; FTP is always 1.
+export function resolvePoolSize(config: {
+  protocol: string;
+  maxConnections?: number;
+  concurrency?: number;
+}): number {
+  if (config.protocol !== 'sftp') {
+    return 1;
+  }
+
+  return Math.max(
+    1,
+    Math.min(config.maxConnections || 1, config.concurrency || 1, MAX_POOL_SIZE)
+  );
 }
 
 function chooseDefaultPort(protocol) {
@@ -569,7 +600,7 @@ export default class FileService {
   }
 
   getRemoteFileSystem(config: ServiceConfig): Promise<FileSystem> {
-    return createRemoteIfNoneExist(getHostInfo(config));
+    return createRemoteIfNoneExist(getHostInfo(config), resolvePoolSize(config));
   }
 
   getConfig(useProfile = app.state.profile): ServiceConfig {
@@ -624,6 +655,9 @@ export default class FileService {
     }
     if (serviceConfig.protocol === 'ftp') {
       serviceConfig.concurrency = 1;
+      // FTP serializes every command on one control connection (p-queue with
+      // concurrency 1 in ftpFileSystem) — extra connections buy nothing
+      serviceConfig.maxConnections = 1;
     }
     serviceConfig.ignore = this._createIgnoreFn(fileServiceConfig);
 

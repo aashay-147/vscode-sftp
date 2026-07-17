@@ -126,12 +126,44 @@ export async function classifyFile(
   return classifyPair(local, remote, location, compareMtime);
 }
 
+// Bounds concurrent list() calls during a walk (Feature 4). The recursive walk
+// otherwise fires one list() per directory all at once, which floods a pooled
+// connection set and starves transfers sharing it. Held only around the
+// directory read itself — released before recursing — so deep trees can't
+// deadlock on the limit.
+export class WalkLimit {
+  private available: number;
+  private waiting: Array<() => void> = [];
+
+  constructor(limit: number) {
+    this.available = Math.max(1, limit || 1);
+  }
+
+  async acquire(): Promise<void> {
+    if (this.available > 0) {
+      this.available -= 1;
+      return;
+    }
+    await new Promise<void>(resolve => this.waiting.push(resolve));
+  }
+
+  release(): void {
+    const next = this.waiting.shift();
+    if (next) {
+      next();
+    } else {
+      this.available += 1;
+    }
+  }
+}
+
 // Optional walk instrumentation for long-running collects (staging): a
-// cancellation probe checked once per directory level, and a per-file tick
-// for indeterminate progress counters.
+// cancellation probe checked once per directory level, a per-file tick
+// for indeterminate progress counters, and a bound on concurrent list() calls.
 export interface WalkControl {
   isCancelled(): boolean;
   onFile?(): void;
+  listLimit?: WalkLimit;
 }
 
 export async function collectFiles(
@@ -147,11 +179,19 @@ export async function collectFiles(
   }
 
   let fileEntries: FileEntry[];
+  const limit = control && control.listLimit;
+  if (limit) {
+    await limit.acquire();
+  }
   try {
     fileEntries = await fileSystem.list(dir);
   } catch (error) {
     // the folder may not exist on this side — every file on the other side is "new"
     return;
+  } finally {
+    if (limit) {
+      limit.release();
+    }
   }
 
   await Promise.all(
@@ -206,9 +246,17 @@ export const compareFolders = createFileHandler<FileHandleOption>({
             report(`${seen} files checked`);
           },
         };
+        // each side gets its own limit — the local walk must not queue behind
+        // slow remote directory reads (Feature 4)
         await Promise.all([
-          collectFiles(localFs, localFsPath, localFsPath, option.ignore, localFiles, control),
-          collectFiles(remoteFs, remoteFsPath, remoteFsPath, option.ignore, remoteFiles, control),
+          collectFiles(localFs, localFsPath, localFsPath, option.ignore, localFiles, {
+            ...control,
+            listLimit: new WalkLimit(this.config.concurrency),
+          }),
+          collectFiles(remoteFs, remoteFsPath, remoteFsPath, option.ignore, remoteFiles, {
+            ...control,
+            listLimit: new WalkLimit(this.config.concurrency),
+          }),
         ]);
         return isCancelled();
       }

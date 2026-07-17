@@ -180,6 +180,7 @@ export async function stageAndConfirmFolderTransfer(
         ignore: option.ignore,
         compareMtime,
         serviceName: ctx.fileService.name,
+        concurrency: ctx.config.concurrency,
         control: {
           isCancelled,
           onFile() {
