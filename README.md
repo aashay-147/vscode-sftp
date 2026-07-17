@@ -66,6 +66,13 @@ in [.planning/fork-sftp-plan.md](.planning/fork-sftp-plan.md).
   Refresh) that resets the view back to empty on demand, instead of a stale result
   sitting there until the next re-compare. Non-destructive: it only discards the
   in-memory tree, never files.
+- **Folder Compare path grouping** — switch between the existing flat status lists
+  and a persisted Group by Path tree. Status groups, counts, and whole-group actions
+  stay intact in both layouts.
+- **Folder Compare reveal and per-file delete** — reveal compare files/path folders in
+  the local or Remote Explorer where that side exists. New Remote files can be deleted
+  on the remote and New Local files can be deleted locally, each behind a modal warning
+  naming the exact path.
 
 ### 🚧 In progress
 
@@ -114,12 +121,6 @@ in [.planning/fork-sftp-plan.md](.planning/fork-sftp-plan.md).
   subpath.
 - **Settings GUI** — a webview-based settings editor for `sftp.json` (deferred, no
   timeline yet).
-
-### 🤔 Under consideration
-
-- **Folder Compare view: show subfolders** — nest the compare tree by folder instead
-  of a flat file list per status group. Speculative — being validated before it's
-  built, since the current flat view already shows subfolder context.
 
 ## Installation
 
@@ -372,9 +373,25 @@ How to use it:
 
 1. Right-click a folder in the explorer (or a folder in the Remote Explorer), open the `SFTP` submenu, and pick `Compare Folder with Remote`; or run `SFTP: Compare Active Folder with Remote` from the command palette.
 2. The **Folder Compare** view in the SFTP activity bar container shows the groups above (empty groups are hidden). `ignore` rules from your config apply.
-3. Click a _Modified_ or _Timestamp Only_ entry to open a diff. Use the per-entry inline actions to download, upload, or match-timestamp an entry; the comparison re-runs afterwards. The refresh button re-runs the comparison at any time; the clear button next to it empties the view.
+3. Open the view's `...` menu and choose **Group by Path** to nest folders below each
+   status, or **Show Flat List** to restore the filename + parent-path list. The choice
+   is saved for the workspace; switching layout does not re-run comparison.
+4. Click a _Modified_ or _Timestamp Only_ entry to open a diff. Use the per-entry inline actions to download, upload, or match-timestamp an entry; the comparison re-runs afterwards. The refresh button re-runs the comparison at any time; the clear button next to it empties the view.
 
 To compare just a **file or a handful of files**, select them (in the explorer, the Remote Explorer, or an editor tab), open the `SFTP` submenu, and pick `Compare File with Remote`. Only those files load into the view, and **Refresh** re-runs that same selection instead of widening to the parent folder. From a Remote Explorer file you can also pick `Diff with Local` to open a direct diff of that remote file against its local copy.
+
+Right-click a compare file or a path folder to reveal it on the side guaranteed to
+exist by its status:
+
+| Status | Reveal | Per-file delete |
+| --- | --- | --- |
+| **Modified** / **Timestamp Only** | Local Explorer and Remote Explorer | None |
+| **New Remote** | Remote Explorer | **Delete on Remote** (modal confirm) |
+| **New Local** | Local Explorer | **Delete Locally** (modal confirm) |
+
+Delete warnings name the exact relative path and affect only that file. Path-folder
+nodes are organizational: they can be revealed, but cannot be transferred or deleted
+as a batch.
 
 ### Group (whole-category) actions
 

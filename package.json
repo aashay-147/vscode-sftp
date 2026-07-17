@@ -337,6 +337,38 @@
         "icon": "$(clear-all)"
       },
       {
+        "command": "sftp.compare.groupByPath",
+        "title": "Group by Path",
+        "category": "SFTP"
+      },
+      {
+        "command": "sftp.compare.showFlat",
+        "title": "Show Flat List",
+        "category": "SFTP"
+      },
+      {
+        "command": "sftp.compare.revealInExplorer",
+        "title": "Reveal in Explorer",
+        "category": "SFTP"
+      },
+      {
+        "command": "sftp.compare.revealInRemoteExplorer",
+        "title": "Reveal in Remote Explorer",
+        "category": "SFTP"
+      },
+      {
+        "command": "sftp.compare.deleteRemote",
+        "title": "Delete on Remote",
+        "category": "SFTP",
+        "icon": "$(trash)"
+      },
+      {
+        "command": "sftp.compare.deleteLocal",
+        "title": "Delete Locally",
+        "category": "SFTP",
+        "icon": "$(trash)"
+      },
+      {
         "command": "sftp.compare.diff",
         "title": "Diff with Remote",
         "category": "SFTP",
@@ -596,6 +628,30 @@
           "when": "sftp.enabled"
         },
         {
+          "command": "sftp.compare.groupByPath",
+          "when": "sftp.enabled"
+        },
+        {
+          "command": "sftp.compare.showFlat",
+          "when": "sftp.enabled"
+        },
+        {
+          "command": "sftp.compare.revealInExplorer",
+          "when": "false"
+        },
+        {
+          "command": "sftp.compare.revealInRemoteExplorer",
+          "when": "false"
+        },
+        {
+          "command": "sftp.compare.deleteRemote",
+          "when": "false"
+        },
+        {
+          "command": "sftp.compare.deleteLocal",
+          "when": "false"
+        },
+        {
           "command": "sftp.compare.diff",
           "when": "false"
         },
@@ -797,6 +853,16 @@
           "command": "sftp.compare.clear",
           "when": "view == sftpCompare",
           "group": "navigation"
+        },
+        {
+          "command": "sftp.compare.groupByPath",
+          "when": "view == sftpCompare && sftp.compareGrouping == flat",
+          "group": "1_grouping@1"
+        },
+        {
+          "command": "sftp.compare.showFlat",
+          "when": "view == sftpCompare && sftp.compareGrouping == path",
+          "group": "1_grouping@1"
         }
       ],
       "view/item/context": [
@@ -892,6 +958,26 @@
           "command": "sftp.compareFile",
           "group": "3_trans@9",
           "when": "sftp.enabled && view == remoteExplorer && viewItem == file"
+        },
+        {
+          "command": "sftp.compare.revealInExplorer",
+          "group": "2_reveal@1",
+          "when": "view == sftpCompare && viewItem == compareItem-newLocal || view == sftpCompare && viewItem == compareItem-modified || view == sftpCompare && viewItem == compareItem-timeDiff || view == sftpCompare && viewItem == compareFolder-newLocal || view == sftpCompare && viewItem == compareFolder-modified || view == sftpCompare && viewItem == compareFolder-timeDiff"
+        },
+        {
+          "command": "sftp.compare.revealInRemoteExplorer",
+          "group": "2_reveal@2",
+          "when": "view == sftpCompare && viewItem == compareItem-newRemote || view == sftpCompare && viewItem == compareItem-modified || view == sftpCompare && viewItem == compareItem-timeDiff || view == sftpCompare && viewItem == compareFolder-newRemote || view == sftpCompare && viewItem == compareFolder-modified || view == sftpCompare && viewItem == compareFolder-timeDiff"
+        },
+        {
+          "command": "sftp.compare.deleteRemote",
+          "group": "9_delete@1",
+          "when": "view == sftpCompare && viewItem == compareItem-newRemote"
+        },
+        {
+          "command": "sftp.compare.deleteLocal",
+          "group": "9_delete@1",
+          "when": "view == sftpCompare && viewItem == compareItem-newLocal"
         },
         {
           "command": "sftp.compare.diff",

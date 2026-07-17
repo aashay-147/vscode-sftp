@@ -1,16 +1,25 @@
 import * as vscode from 'vscode';
-import { registerCommand } from '../../host';
-import { COMMAND_COMPARE_CLEAR, COMMAND_COMPARE_REFRESH } from '../../constants';
+import { registerCommand, setContextValue } from '../../host';
+import {
+  COMMAND_COMPARE_CLEAR,
+  COMMAND_COMPARE_GROUP_BY_PATH,
+  COMMAND_COMPARE_REFRESH,
+  COMMAND_COMPARE_SHOW_FLAT,
+} from '../../constants';
 import { reportError, simplifyPath } from '../../helper';
 import { compareFiles, compareFolders, CompareResult } from '../../fileHandlers/compare';
 import CompareTreeDataProvider, { CompareNode } from './treeDataProvider';
+
+const GROUP_BY_PATH_STATE = 'sftp.compare.groupByPath';
 
 export default class CompareExplorer {
   private _explorerView: vscode.TreeView<CompareNode>;
   private _treeDataProvider: CompareTreeDataProvider;
 
   constructor(context: vscode.ExtensionContext) {
-    this._treeDataProvider = new CompareTreeDataProvider();
+    const groupByPath = context.workspaceState.get<boolean>(GROUP_BY_PATH_STATE, false);
+    this._treeDataProvider = new CompareTreeDataProvider(groupByPath ? 'path' : 'flat');
+    setContextValue('compareGrouping', groupByPath ? 'path' : 'flat');
 
     this._explorerView = vscode.window.createTreeView('sftpCompare', {
       showCollapseAll: true,
@@ -22,6 +31,12 @@ export default class CompareExplorer {
     // setResult(null) is idempotent, so no guard is needed here (unlike
     // _refresh, which would re-run a compare against nothing).
     registerCommand(context, COMMAND_COMPARE_CLEAR, () => this.setResult(null));
+    registerCommand(context, COMMAND_COMPARE_GROUP_BY_PATH, () =>
+      this._setGroupByPath(context, true)
+    );
+    registerCommand(context, COMMAND_COMPARE_SHOW_FLAT, () =>
+      this._setGroupByPath(context, false)
+    );
   }
 
   get lastResult(): CompareResult | null {
@@ -33,6 +48,13 @@ export default class CompareExplorer {
     this._explorerView.message = result
       ? `${simplifyPath(result.localRoot)} ↔ ${result.serviceName || result.remoteRoot}`
       : undefined;
+  }
+
+  private async _setGroupByPath(context: vscode.ExtensionContext, groupByPath: boolean) {
+    await context.workspaceState.update(GROUP_BY_PATH_STATE, groupByPath);
+    const grouping = groupByPath ? 'path' : 'flat';
+    this._treeDataProvider.setGrouping(grouping);
+    setContextValue('compareGrouping', grouping);
   }
 
   private async _refresh() {

@@ -1,2 +1,2 @@
 export { default } from './explorer';
-export { CompareNode, CompareItem, CompareGroup } from './treeDataProvider';
+export { CompareNode, CompareItem, CompareGroup, CompareFolder } from './treeDataProvider';

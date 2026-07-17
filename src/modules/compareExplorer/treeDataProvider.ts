@@ -1,3 +1,5 @@
+import * as path from 'path';
+import * as upath from 'upath';
 import * as vscode from 'vscode';
 import { COMMAND_COMPARE_DIFF } from '../../constants';
 import { CompareEntry, CompareResult, CompareStatus } from '../../fileHandlers/compare';
@@ -13,7 +15,17 @@ export interface CompareItem {
   entry: CompareEntry;
 }
 
-export type CompareNode = CompareGroup | CompareItem;
+export interface CompareFolder {
+  kind: 'folder';
+  status: CompareStatus;
+  relDir: string;
+  localFsPath: string;
+  remoteFsPath: string;
+  entries: CompareEntry[];
+}
+
+export type CompareNode = CompareGroup | CompareFolder | CompareItem;
+export type CompareGrouping = 'flat' | 'path';
 
 const GROUPS: CompareGroup[] = [
   { kind: 'group', status: CompareStatus.Modified, label: 'Modified' },
@@ -36,6 +48,63 @@ const STATUS_LABELS = {
   [CompareStatus.NewLocal]: 'New Local',
 };
 
+function pathSegments(relPath: string): string[] {
+  return relPath.split('/').filter(Boolean);
+}
+
+function folderPaths(entry: CompareEntry, relDir: string) {
+  const entryDirectoryDepth = Math.max(0, pathSegments(entry.relPath).length - 1);
+  const folderDepth = pathSegments(relDir).length;
+  const levelsToAscend = Math.max(0, entryDirectoryDepth - folderDepth);
+
+  let localFsPath = path.dirname(entry.localFsPath);
+  let remoteFsPath = upath.dirname(entry.remoteFsPath);
+  for (let index = 0; index < levelsToAscend; index++) {
+    localFsPath = path.dirname(localFsPath);
+    remoteFsPath = upath.dirname(remoteFsPath);
+  }
+
+  return { localFsPath, remoteFsPath };
+}
+
+// Build only one tree level at a time from the flat CompareEntry list. Absolute
+// directory paths participate in folder identity so selected-file comparisons
+// spanning services cannot merge equal relative paths from different roots.
+export function comparePathChildren(
+  entries: CompareEntry[],
+  status: CompareStatus,
+  relDir: string = ''
+): Array<CompareFolder | CompareItem> {
+  const parentDepth = pathSegments(relDir).length;
+  const folders = new Map<string, CompareFolder>();
+  const files: CompareItem[] = [];
+
+  entries.forEach(entry => {
+    const segments = pathSegments(entry.relPath);
+    if (segments.length <= parentDepth + 1) {
+      files.push({ kind: 'entry', entry });
+      return;
+    }
+
+    const childRelDir = segments.slice(0, parentDepth + 1).join('/');
+    const paths = folderPaths(entry, childRelDir);
+    const key = `${childRelDir}\u0000${paths.localFsPath}\u0000${paths.remoteFsPath}`;
+    let folder = folders.get(key);
+    if (!folder) {
+      folder = { kind: 'folder', status, relDir: childRelDir, ...paths, entries: [] };
+      folders.set(key, folder);
+    }
+    folder.entries.push(entry);
+  });
+
+  const sortedFolders = Array.from(folders.values()).sort((a, b) =>
+    upath.basename(a.relDir).localeCompare(upath.basename(b.relDir)) ||
+    a.localFsPath.localeCompare(b.localFsPath)
+  );
+  files.sort((a, b) => a.entry.relPath.localeCompare(b.entry.relPath));
+  return [...sortedFolders, ...files];
+}
+
 export default class CompareTreeDataProvider implements vscode.TreeDataProvider<CompareNode> {
   private _onDidChangeTreeData: vscode.EventEmitter<CompareNode> = new vscode.EventEmitter<
     CompareNode
@@ -43,6 +112,15 @@ export default class CompareTreeDataProvider implements vscode.TreeDataProvider<
   readonly onDidChangeTreeData: vscode.Event<CompareNode> = this._onDidChangeTreeData.event;
 
   private _result: CompareResult | null = null;
+  private _grouping: CompareGrouping;
+
+  constructor(grouping: CompareGrouping = 'flat') {
+    this._grouping = grouping;
+  }
+
+  get grouping(): CompareGrouping {
+    return this._grouping;
+  }
 
   get result(): CompareResult | null {
     return this._result;
@@ -50,6 +128,15 @@ export default class CompareTreeDataProvider implements vscode.TreeDataProvider<
 
   setResult(result: CompareResult | null) {
     this._result = result;
+    this._onDidChangeTreeData.fire();
+  }
+
+  setGrouping(grouping: CompareGrouping) {
+    if (this._grouping === grouping) {
+      return;
+    }
+
+    this._grouping = grouping;
     this._onDidChangeTreeData.fire();
   }
 
@@ -69,6 +156,19 @@ export default class CompareTreeDataProvider implements vscode.TreeDataProvider<
       return treeItem;
     }
 
+    if (node.kind === 'folder') {
+      const treeItem = new vscode.TreeItem(
+        upath.basename(node.relDir),
+        vscode.TreeItemCollapsibleState.Collapsed
+      );
+      treeItem.iconPath = new (vscode.ThemeIcon as any)('folder');
+      treeItem.tooltip = `${node.relDir} — ${STATUS_LABELS[node.status]}\nlocal: ${
+        node.localFsPath
+      }\nremote: ${node.remoteFsPath}`;
+      treeItem.contextValue = `compareFolder-${node.status}`;
+      return treeItem;
+    }
+
     const entry = node.entry;
     const treeItem = new vscode.TreeItem(
       vscode.Uri.file(entry.localFsPath),
@@ -76,7 +176,10 @@ export default class CompareTreeDataProvider implements vscode.TreeDataProvider<
     );
     const separatorIndex = entry.relPath.lastIndexOf('/');
     treeItem.label = separatorIndex === -1 ? entry.relPath : entry.relPath.slice(separatorIndex + 1);
-    treeItem.description = separatorIndex === -1 ? '' : entry.relPath.slice(0, separatorIndex);
+    treeItem.description =
+      this._grouping === 'flat' && separatorIndex !== -1
+        ? entry.relPath.slice(0, separatorIndex)
+        : '';
     treeItem.tooltip = `${entry.relPath} — ${STATUS_LABELS[entry.status]}\nlocal: ${
       entry.localFsPath
     }\nremote: ${entry.remoteFsPath}`;
@@ -99,7 +202,14 @@ export default class CompareTreeDataProvider implements vscode.TreeDataProvider<
     }
 
     if (node.kind === 'group') {
-      return this._entriesOf(node.status).map(entry => ({ kind: 'entry' as const, entry }));
+      const entries = this._entriesOf(node.status);
+      return this._grouping === 'flat'
+        ? entries.map(entry => ({ kind: 'entry' as const, entry }))
+        : comparePathChildren(entries, node.status);
+    }
+
+    if (node.kind === 'folder') {
+      return comparePathChildren(node.entries, node.status, node.relDir);
     }
 
     return [];
