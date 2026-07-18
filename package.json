@@ -4,7 +4,7 @@
   "description": "Dreamweaver-style SFTP/FTP workflow for VS Code: folder compare with click-to-diff, staged transfers, parallel connections, remote explorer. Built on vscode-sftp by liximomo & Natizyskunk.",
   "version": "2.0.0",
   "publisher": "heuristics-io",
-  "author": "Aashay Tattu <aashay@heuristics.io>",
+  "author": "Aashay Tattu <aashay.sftp@heuristics.io>",
   "engines": {
     "vscode": "^1.64.2"
   },
@@ -31,7 +31,7 @@
     "remote explorer"
   ],
   "galleryBanner": {
-    "color": "#1e1e2e",
+    "color": "#242178",
     "theme": "dark"
   },
   "activationEvents": [
