@@ -237,6 +237,32 @@ Update the destination only if a newer version is on the source filesystem.
 }
 ```
 
+### confirmOverwrite
+Ask before an explicit upload/download overwrites an existing destination file. A single-file transfer prompts per file; a folder/project/multi-file transfer first classifies both sides and shows one summary modal (*N new, N will be overwritten, N identical*) with **Transfer**, **Review in Compare View**, and **Cancel**. Sync, Force transfers, Folder Compare actions, and the implicit paths (uploadOnSave, downloadOnOpen, watcher) never prompt. `"confirm"` behaves like `true`.
+
+| Key | Value | Default |
+| --- | --- | --- |
+| *confirmOverwrite* | *boolean* or `"confirm"` | `false` |
+
+```json
+{
+  "confirmOverwrite": true
+}
+```
+
+### skipUnmodified
+Skip files already identical on the destination during explicit folder/project/multi-file uploads/downloads (same size+mtime basis as Sync and Folder Compare; size-only on FTP). Single-file commands still transfer their one named file.
+
+| Key | Value | Default |
+| --- | --- | --- |
+| *skipUnmodified* | *boolean* | `false` |
+
+```json
+{
+  "skipUnmodified": true
+}
+```
+
 ### ignore
 Ignore can be used to ignore files and folders from sync, and even supports wildcards using `*`. <br>
 This is the same behavior as gitignore, all paths relative to context of the current configuration.

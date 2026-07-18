@@ -29,7 +29,7 @@ Download the entire folder the current file is located in.
 1. Any files that exist on both local and remote that have a different timestamp between local and remote are copied over.
 2. Any files that only exist on the local are copied over.
 
-You can change the default behavior by [syncOption](https://github.com/Natizyskunk/vscode-sftp/wiki/Configuration#syncoption).
+You can change the default behavior by [syncOption](configuration.md#syncoption).
 
 ### SFTP: Sync Remote -> Local
 Same as `Sync Local -> Remote`, but in the opposite direction.
@@ -37,7 +37,7 @@ Same as `Sync Local -> Remote`, but in the opposite direction.
 ### SFTP: Sync Both Directions
 Compare file modification times, and will always perform the action that causes the newest file to be present in both locations.
 
-*Only [skipCreate](https://github.com/Natizyskunk/vscode-sftp/wiki/Configuration#syncoptionskipcreate) and [ignoreExisting](https://github.com/Natizyskunk/vscode-sftp/wiki/Configuration#syncoptionignoreexisting) are valid for this command.*
+*Only [skipCreate](configuration.md#syncoptionskipcreate) and [ignoreExisting](configuration.md#syncoptionignoreexisting) are valid for this command.*
 
 ### SFTP: List Active Folder
 List the folder the current file is located in.
@@ -54,11 +54,41 @@ Download file or folders.
 #### KeyBindings Args
 func(fspaths: string[])
 
-### SFTP: Cancel All Transfers
-Stop the current transfers (upload and download).
+### SFTP: Cancel All Transfers (Stop)
+Stop the current transfers (upload and download). Queued files are dropped; in-flight files finish.
+
+### SFTP: Pause All Transfers (`sftp.transfer.pause`)
+Pause all running transfer operations globally. Paused operations keep their queue and show *Paused — N/M* in their progress notification.
+
+### SFTP: Resume All Transfers (`sftp.transfer.resume`)
+Resume transfers previously paused with `Pause All Transfers`.
 
 ### SFTP: Open SSH in Terminal
 Open a terminal in VSCode and auto login to a specific server.
+
+
+## Folder Compare commands
+
+### SFTP: Compare Folder with Remote (`sftp.compareFolder`)
+Compare the selected folder (file explorer or Remote Explorer) against its remote counterpart and load the result into the Folder Compare view.
+
+### SFTP: Compare Active Folder with Remote (`sftp.compareActiveFolder`)
+Same comparison, run from the command palette for the folder containing the active file.
+
+### SFTP: Compare File with Remote (`sftp.compareFile`)
+Compare only the selected file(s) against the remote and load just those into the Folder Compare view. Refresh re-runs the same selection instead of widening to the parent folder.
+
+### Refresh Comparison (`sftp.compare.refresh`)
+Re-run the current comparison (view title bar).
+
+### Clear Comparison (`sftp.compare.clear`)
+Reset the Folder Compare view back to empty (view title bar, next to Refresh). Non-destructive: only the in-memory result is discarded, never files.
+
+### Group by Path (`sftp.compare.groupByPath`) / Show Flat List (`sftp.compare.showFlat`)
+Toggle the view layout between the flat status lists and a nested path tree (view `...` menu). The choice is persisted per workspace; switching does not re-run comparison.
+
+### Diff with Local (`sftp.diffWithLocal`)
+From a Remote Explorer file, open a diff of the remote file against its local counterpart (the mirror of `Diff with Remote`).
 
 
 ## Folder Compare — group actions

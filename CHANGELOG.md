@@ -1,8 +1,21 @@
+## 2.0.0 — SFTP Workbench (first release under new listing)
+The extension is now published as **SFTP Workbench** (`heuristics-io.sftp-workbench`), a fork of vscode-sftp by [liximomo](https://github.com/liximomo) (original author) and [Natizyskunk](https://github.com/Natizyskunk) (maintained fork this build is based on). Only the marketing identity changed: all `sftp.*` command ids, settings, views, and the `.vscode/sftp.json` configuration format remain fully compatible.
+
+* New Feature : Folder Compare view — compare a local folder against its remote counterpart, grouped into Modified / Timestamp Only / New Remote / New Local with click-to-diff, per-entry actions, group (whole-category) actions, compare-selected-files, reveal in local/remote explorer, per-file delete, and a persisted Flat / Group by Path layout toggle.
+* New Feature : Clear Compare — reset the Folder Compare view back to empty on demand.
+* New Feature : Overwrite confirmation (`confirmOverwrite`) — explicit uploads/downloads prompt before overwriting an existing destination file; folder-level transfers show a summary modal with a Review in Compare View option.
+* New Feature : Diff-only transfer (`skipUnmodified`) — explicit folder/project/multi-file transfers skip files already identical on the destination.
+* New Feature : Per-operation transfer progress with cancel, plus global pause/resume/stop for all transfers.
+* New Feature : Parallel transfers — a per-profile `maxConnections` connection pool so transfers, syncs, and folder walks run in parallel.
+* Rebrand : new display name, publisher, repository (https://github.com/aashay-147/vscode-sftp), and README; upstream donation links moved to a credits section.
+
 ## 1.17.0 - 2026-07-07
 * New Feature : Folder Compare view — compare a local folder against its remote counterpart, grouped into Modified / Timestamp Only / New Remote / New Local with click-to-diff and per-entry download/upload/timestamp actions.
 * New Feature : Folder Compare group (whole-category) actions — right-click a group header to Download from Remote, Upload to Remote, Match Timestamp (Use Remote/Local), Delete on Remote, or Delete Locally for every file in the group at once. Destructive and overwriting actions require a modal confirmation.
 * Fix : FTP timestamp comparison — modification-time comparison is skipped on FTP (LIST mtimes are unreliable), so the Timestamp Only group no longer over-reports on FTP connections.
 * Fix : Remote Explorer folder commands (Upload/Download Folder) no longer leak onto Folder Compare group headers ("missing targets" error).
+
+# Upstream history (vscode-sftp by Natizyskunk / liximomo)
 
 ## 1.16.3 - 2023-06-16
 * [#356] New Feature : Upload to all profiles (Pull request [#313](https://github.com/Natizyskunk/vscode-sftp/pull/313) from @wewawa vscode-sftp:create_multi_command).

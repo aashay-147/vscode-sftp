@@ -103,6 +103,19 @@ Explicit overrides for the default transport layer algorithms used for the conne
 }
 ```
 
+### maxConnections
+Pool up to this many SFTP connections per profile so transfers, syncs, and folder walks run in parallel. The pool grows lazily (extra connections open only while enough operations are in flight) and is capped by `concurrency` and a hard limit of 8. Interactive credentials are asked once and reused. FTP is unaffected (its protocol serializes on one control connection); `1` is the historical single-connection behavior.
+
+| Key | Value | Default |
+| --- | --- | --- |
+| *maxConnections* | *number* | `1` |
+
+```json
+{
+  "maxConnections": 4
+}
+```
+
 ### sshConfigPath
 Absolute path to your SSH configuration file.
 

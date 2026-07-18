@@ -1,8 +1,12 @@
-# Contributing to vscode-sftp
+# Contributing to SFTP Workbench
 
-After you've created a branch on your fork with your changes, [open a pull request][pr-link]. 
+After you've created a branch on your fork with your changes, [open a pull request][pr-link] against [aashay-147/vscode-sftp](https://github.com/aashay-147/vscode-sftp).
 
-*Please follow the guidelines given below while making a Pull Request to the vscode-sftp*
+*Please follow the guidelines given below while making a Pull Request to SFTP Workbench*
+
+## Upstream ports
+
+SFTP Workbench is a fork of [Natizyskunk/vscode-sftp](https://github.com/Natizyskunk/vscode-sftp). Fixes landing upstream are ported over selectively; if you want to contribute a fix that also applies upstream, consider opening it there too so both lines benefit. The porting policy (Phase A/B/C) is documented in the project's internal planning notes.
 
 ## Pull Request Guidelines
 
@@ -12,7 +16,7 @@ After you've created a branch on your fork with your changes, [open a pull reque
 * Search previous Pull Requests or Issues before making a new one, as yours may be a duplicate.
 * Please make sure the feature has proper documentation.
 * Please make sure you squash all commits together before opening a pull request. If your pull request requires changes upon review, please be sure to squash all additional commits as well. [This wiki page][squash-link] outlines the squash process.
-* Target your Pull Request to the `master` branch of the `vscode-sftp`
+* Target your Pull Request to the `main` branch of the repository.
 
 Once you've submitted a pull request, the collaborators can review your proposed changes and decide whether or not to incorporate (pull in) your changes.
 
@@ -48,4 +52,3 @@ Opening a pull request will trigger a build to check the validity of all links i
 [remote-link]: <https://help.github.com/articles/configuring-a-remote-for-a-fork/>
 [syncing-link]: <https://help.github.com/articles/syncing-a-fork>
 [squash-link]: <https://github.com/todotxt/todo.txt-android/wiki/Squash-All-Commits-Related-to-a-Single-Issue-into-a-Single-Commit>
-
