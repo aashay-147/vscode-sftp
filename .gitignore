@@ -9,6 +9,7 @@ INSTALL_DEBUG.md
 
 ### Extensions ###
 sftp-*.vsix
+!releases/sftp-*.vsix
 
 ### VS Code ###
 .vscode/**
