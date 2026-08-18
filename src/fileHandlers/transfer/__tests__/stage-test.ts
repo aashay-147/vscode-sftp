@@ -99,6 +99,8 @@ function stage(direction: TransferDirection, extra: object = {}) {
     ignore: null,
     compareMtime: true,
     serviceName: 'test',
+    serviceId: 7,
+    originUri: 'file:///local/folder',
     ...extra,
   });
 }
@@ -124,7 +126,10 @@ describe('stageFolderTransfer (Feature 3 staging engine)', () => {
     // destination-only file is classified (visible in Review) but is not a count
     const remoteOnly = plan!.result.entries.find(e => e.relPath === 'remoteonly');
     expect(remoteOnly!.status).toBe(CompareStatus.NewRemote);
-    expect(plan!.result.origin).toEqual({ kind: 'folder', root: '/local/folder' });
+    expect(plan!.result.origin).toEqual({ kind: 'folder', uri: 'file:///local/folder' });
+    expect(plan!.result.serviceId).toBe(7);
+    // every entry is stamped with the owning service id
+    expect(plan!.result.entries.every(e => e.serviceId === 7)).toBe(true);
   });
 
   test('download: create counts the remote-only file, identical keyed by REMOTE path', async () => {
@@ -148,6 +153,46 @@ describe('stageFolderTransfer (Feature 3 staging engine)', () => {
 
     expect(plan!.counts.overwriteTimeDiff).toBe(0);
     expect(plan!.counts.identical).toBe(2); // same + tdiff (same size)
+  });
+
+  test('mirror-rooted staging (Feature 9): entries live under the mirror, identical keyed by source side', async () => {
+    // same tree, but the local side lives under a localDownloadPath mirror
+    fillFs({
+      local: {
+        _downloads: {
+          folder: {
+            mod: file('local version'),
+            same: file('unchanged'),
+          },
+        },
+      },
+      remote: {
+        folder: {
+          mod: file('remote'),
+          same: file('unchanged'),
+          remoteonly: file('only remote'),
+        },
+      },
+    });
+
+    const plan = await stage(TransferDirection.REMOTE_TO_LOCAL, {
+      localFsPath: '/local/_downloads/folder',
+      originUri: 'file:///local/_downloads/folder',
+    });
+
+    expect(plan!.counts).toEqual({
+      create: 1, // remoteonly
+      overwriteModified: 1,
+      overwriteTimeDiff: 0,
+      identical: 1,
+    });
+    // every classified entry roots under the mirror on the local side
+    expect(
+      plan!.result.entries.every(e => e.localFsPath.startsWith('/local/_downloads/folder/'))
+    ).toBe(true);
+    // download direction: identical keyed by the REMOTE (source) side
+    expect(plan!.identical).toEqual(['/remote/folder/same']);
+    expect(plan!.result.localRoot).toBe('/local/_downloads/folder');
   });
 
   test('cancelled walk: plan discarded, null returned', async () => {

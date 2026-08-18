@@ -105,7 +105,11 @@ function makeCtx(configOverrides: object = {}) {
     stop: jest.fn(),
   };
   const ctx: any = {
-    target: { localFsPath: '/local/folder', remoteFsPath: '/remote/folder' },
+    target: {
+      localFsPath: '/local/folder',
+      remoteFsPath: '/remote/folder',
+      localUri: { toString: () => 'file:///local/folder' },
+    },
     fileService: {
       name: 'test-service',
       baseDir: '/local',
@@ -182,7 +186,7 @@ describe('staged folder transfer (Features 2+3)', () => {
 
     expect(setResult).toHaveBeenCalledTimes(1);
     const result = setResult.mock.calls[0][0];
-    expect(result.origin).toEqual({ kind: 'folder', root: '/local/folder' });
+    expect(result.origin).toEqual({ kind: 'folder', uri: 'file:///local/folder' });
     expect(result.entries.length).toBe(2); // newr + mod; identical not representable
     expect(tasks.length).toBe(0);
     expect(scheduler.run).not.toHaveBeenCalled();

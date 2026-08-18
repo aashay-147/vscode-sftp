@@ -1,11 +1,27 @@
 import * as path from 'path';
 import { Uri } from 'vscode';
 import app from '../app';
-import { upath, FileSystem, FileEntry, FileStats, FileService, FileType } from '../core';
-import { reportError } from '../helper';
+import {
+  upath,
+  FileSystem,
+  FileEntry,
+  FileStats,
+  FileService,
+  FileType,
+  TransferDirection,
+  UResource,
+} from '../core';
+import {
+  isPathUnder,
+  reportError,
+  resolveLocalDownloadPathBase,
+  toLocalPath,
+  toRemotePath,
+} from '../helper';
 import { showCancellableProgress } from '../host';
 import { FileHandleOption } from './option';
 import createFileHandler, { handleCtxFromUri, FileHandlerContext } from './createFileHandler';
+import { getDownloadPathBase, resolveEffectiveTarget } from './transfer/downloadTarget';
 
 export enum CompareStatus {
   NewLocal = 'newLocal',
@@ -23,20 +39,60 @@ export interface CompareEntry {
   localFsPath: string;
   remoteFsPath: string;
   status: CompareStatus;
+  // owning FileService.id, so row/group actions rebuild an exact context
+  // instead of round-tripping the local path through the config trie (which
+  // breaks for out-of-workspace mirror roots and stale profiles)
+  serviceId?: number;
 }
 
 // How the current result was produced, so Refresh re-runs the SAME scope
 // instead of silently widening a file selection into a full folder walk.
+// The folder variant stores the stringified clicked-side uri (local file
+// scheme or remote scheme) so a refresh re-derives the roots from the ACTIVE
+// profile's config rather than pinning yesterday's resolved paths.
 export type CompareOrigin =
-  | { kind: 'folder'; root: string }
+  | { kind: 'folder'; uri: string }
   | { kind: 'files'; uris: string[] };
 
 export interface CompareResult {
   localRoot: string;
   remoteRoot: string;
   serviceName?: string;
+  serviceId?: number;
   origin: CompareOrigin;
   entries: CompareEntry[];
+}
+
+// Resolve which local/remote pair a folder compare should actually walk under
+// the Feature 9 mirror semantics. The clicked side is literal, the other side
+// is derived; without a configured mirror this is the identity on the target.
+export function deriveCompareRoots(args: {
+  config: { remotePath: string; localDownloadPath?: string };
+  baseDir: string;
+  target: { localFsPath: string; remoteFsPath: string };
+  // true when the user clicked the remote side (remote-scheme origin uri)
+  remoteOrigin: boolean;
+}): { localRoot: string; remoteRoot: string } {
+  const { config, baseDir, target, remoteOrigin } = args;
+  const base = resolveLocalDownloadPathBase(config.localDownloadPath, baseDir);
+  if (!base) {
+    return { localRoot: target.localFsPath, remoteRoot: target.remoteFsPath };
+  }
+  if (isPathUnder(base, target.localFsPath)) {
+    // the local side lives in the mirror — remote root is its inverse mapping
+    return {
+      localRoot: target.localFsPath,
+      remoteRoot: toRemotePath(target.localFsPath, base, config.remotePath),
+    };
+  }
+  if (remoteOrigin) {
+    // clicked the remote side — the local root is the forward-mapped mirror path
+    return {
+      localRoot: toLocalPath(target.remoteFsPath, config.remotePath, base),
+      remoteRoot: target.remoteFsPath,
+    };
+  }
+  return { localRoot: target.localFsPath, remoteRoot: target.remoteFsPath };
 }
 
 // Classify a file present on both sides. Same basis as sync's isFileModified
@@ -226,7 +282,15 @@ export const compareFolders = createFileHandler<FileHandleOption>({
   async handle(option) {
     const remoteFs = await this.fileService.getRemoteFileSystem(this.config);
     const localFs = this.fileService.getLocalFileSystem();
-    const { localFsPath, remoteFsPath } = this.target;
+    // Feature 9: with a mirror configured the walked roots may differ from the
+    // workspace-mapped target (clicked side literal, other side derived)
+    const { localRoot, remoteRoot } = deriveCompareRoots({
+      config: this.config,
+      baseDir: this.fileService.baseDir,
+      target: this.target,
+      remoteOrigin: Boolean(this.originUri && UResource.isRemote(this.originUri)),
+    });
+    const serviceId = this.fileService.id;
 
     const compareMtime = deriveCompareMtime(this.config);
 
@@ -236,7 +300,7 @@ export const compareFolders = createFileHandler<FileHandleOption>({
     // known without a separate counting pass, so this stays a live counter
     // until Feature 4 routes the walk through the transfer scheduler.
     const cancelled = await showCancellableProgress(
-      `SFTP: Comparing '${path.basename(localFsPath)}'`,
+      `SFTP: Comparing '${path.basename(localRoot)}'`,
       async (report, isCancelled) => {
         let seen = 0;
         const control = {
@@ -249,11 +313,11 @@ export const compareFolders = createFileHandler<FileHandleOption>({
         // each side gets its own limit — the local walk must not queue behind
         // slow remote directory reads (Feature 4)
         await Promise.all([
-          collectFiles(localFs, localFsPath, localFsPath, option.ignore, localFiles, {
+          collectFiles(localFs, localRoot, localRoot, option.ignore, localFiles, {
             ...control,
             listLimit: new WalkLimit(this.config.concurrency),
           }),
-          collectFiles(remoteFs, remoteFsPath, remoteFsPath, option.ignore, remoteFiles, {
+          collectFiles(remoteFs, remoteRoot, remoteRoot, option.ignore, remoteFiles, {
             ...control,
             listLimit: new WalkLimit(this.config.concurrency),
           }),
@@ -275,30 +339,34 @@ export const compareFolders = createFileHandler<FileHandleOption>({
       const entry = classifyPair(localEntry, remoteEntry || null, {
         relPath,
         localFsPath: localEntry.fspath,
-        remoteFsPath: remoteEntry ? remoteEntry.fspath : upath.join(remoteFsPath, relPath),
+        remoteFsPath: remoteEntry ? remoteEntry.fspath : upath.join(remoteRoot, relPath),
       }, compareMtime);
       if (entry) {
-        entries.push(entry);
+        entries.push({ ...entry, serviceId });
       }
     });
     remoteFiles.forEach((remoteEntry, relPath) => {
       const entry = classifyPair(null, remoteEntry, {
         relPath,
-        localFsPath: path.join(localFsPath, relPath),
+        localFsPath: path.join(localRoot, relPath),
         remoteFsPath: remoteEntry.fspath,
       }, compareMtime);
       if (entry) {
-        entries.push(entry);
+        entries.push({ ...entry, serviceId });
       }
     });
     entries.sort((a, b) => a.relPath.localeCompare(b.relPath));
 
     if (app.compareExplorer) {
       app.compareExplorer.setResult({
-        localRoot: localFsPath,
-        remoteRoot: remoteFsPath,
+        localRoot,
+        remoteRoot,
         serviceName: this.fileService.name,
-        origin: { kind: 'folder', root: localFsPath },
+        serviceId,
+        origin: {
+          kind: 'folder',
+          uri: (this.originUri || this.target.localUri).toString(),
+        },
         entries,
       });
     }
@@ -326,6 +394,14 @@ export async function compareFiles(uris: Uri[]): Promise<void> {
       reportError(error);
       continue;
     }
+    // Feature 9: inverse remap only (local side literal) — a selected mirror
+    // file compares against its true remote counterpart, fixing the relPath
+    // derivation below; a no-op for everything else
+    ctx.target = resolveEffectiveTarget(
+      ctx,
+      { useLocalDownloadPath: true },
+      TransferDirection.LOCAL_TO_REMOTE
+    );
     const list = byService.get(ctx.fileService) || [];
     list.push(ctx);
     byService.set(ctx.fileService, list);
@@ -341,6 +417,7 @@ export async function compareFiles(uris: Uri[]): Promise<void> {
   let localRoot: string | undefined;
   let remoteRoot: string | undefined;
   let serviceName: string | undefined;
+  let serviceId: number | undefined;
 
   for (const [fileService, ctxs] of byService) {
     const config = fileService.getConfig();
@@ -349,9 +426,13 @@ export async function compareFiles(uris: Uri[]): Promise<void> {
     const compareMtime = deriveCompareMtime(config);
 
     if (localRoot === undefined) {
-      localRoot = fileService.baseDir;
+      // header roots follow the mirror when the selection was remapped into it
+      const base = getDownloadPathBase(ctxs[0]);
+      localRoot =
+        base && isPathUnder(base, ctxs[0].target.localFsPath) ? base : fileService.baseDir;
       remoteRoot = config.remotePath;
       serviceName = fileService.name;
+      serviceId = fileService.id;
     }
 
     await Promise.all(
@@ -369,7 +450,7 @@ export async function compareFiles(uris: Uri[]): Promise<void> {
             compareMtime
           );
           if (entry) {
-            entries.push(entry);
+            entries.push({ ...entry, serviceId: fileService.id });
           }
         } catch (error) {
           reportError(error);
@@ -385,6 +466,7 @@ export async function compareFiles(uris: Uri[]): Promise<void> {
       localRoot: localRoot!,
       remoteRoot: remoteRoot!,
       serviceName,
+      serviceId,
       origin: { kind: 'files', uris: uris.map(uri => uri.toString()) },
       entries,
     });

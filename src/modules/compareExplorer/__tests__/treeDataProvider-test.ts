@@ -93,7 +93,7 @@ describe('CompareTreeDataProvider path grouping', () => {
       localRoot: '/local',
       remoteRoot: '/remote',
       serviceName: 'test',
-      origin: { kind: 'folder' as const, root: '/local' },
+      origin: { kind: 'folder' as const, uri: 'file:///local' },
       entries: [entry('src/a.ts', '/local/src/a.ts', '/remote/src/a.ts')],
     };
     provider.setResult(result);

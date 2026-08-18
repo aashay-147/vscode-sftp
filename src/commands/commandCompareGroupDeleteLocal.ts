@@ -24,6 +24,6 @@ export default checkCommand({
       return;
     }
 
-    await runCompareGroup(entries, uri => removeLocal(uri));
+    await runCompareGroup(entries, ctx => removeLocal(ctx));
   },
 });

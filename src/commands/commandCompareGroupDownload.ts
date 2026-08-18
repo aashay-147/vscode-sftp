@@ -31,8 +31,8 @@ export default checkCommand({
     // per-file overwrite prompt so a Modified group doesn't fire N more prompts.
     // skipUnmodified off: entries are known-different, re-checking wastes a
     // round-trip.
-    await runCompareGroup(entries, uri =>
-      downloadFile(uri, { ignore: null, confirmOverwrite: false, skipUnmodified: false })
+    await runCompareGroup(entries, ctx =>
+      downloadFile(ctx, { ignore: null, confirmOverwrite: false, skipUnmodified: false })
     );
   },
 });

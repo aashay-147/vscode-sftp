@@ -159,15 +159,16 @@ export async function transferSelectedFiles(
           upath.normalize(config.remotePath),
           upath.normalize(remoteFsPath)
         );
+        const entry = classifyPair(
+          localStat,
+          remoteStat,
+          { relPath, localFsPath, remoteFsPath },
+          compareMtime
+        );
         files.push({
           ctx,
           srcFsPath: fromLocal ? localFsPath : remoteFsPath,
-          entry: classifyPair(
-            localStat,
-            remoteStat,
-            { relPath, localFsPath, remoteFsPath },
-            compareMtime
-          ),
+          entry: entry && { ...entry, serviceId: fileService.id },
           bothPresent: Boolean(localStat && remoteStat),
         });
       })
@@ -253,6 +254,7 @@ async function transferClassifiedFiles(
       localRoot: args.localRoot,
       remoteRoot: args.config.remotePath,
       serviceName: args.fileService.name,
+      serviceId: args.fileService.id,
       // files origin so a later Refresh re-checks exactly this selection
       // instead of widening into a folder walk
       origin: { kind: 'files', uris: files.map(f => f.ctx.target.localUri.toString()) },

@@ -6,8 +6,11 @@ import {
   COMMAND_COMPARE_REFRESH,
   COMMAND_COMPARE_SHOW_FLAT,
 } from '../../constants';
+import { UResource } from '../../core';
 import { reportError, simplifyPath } from '../../helper';
 import { compareFiles, compareFolders, CompareResult } from '../../fileHandlers/compare';
+import { FileHandlerContext } from '../../fileHandlers/createFileHandler';
+import { getAllFileService, getFileService } from '../serviceManager';
 import CompareTreeDataProvider, { CompareNode } from './treeDataProvider';
 
 const GROUP_BY_PATH_STATE = 'sftp.compare.groupByPath';
@@ -69,10 +72,42 @@ export default class CompareExplorer {
       if (result.origin.kind === 'files') {
         await compareFiles(result.origin.uris.map(uri => vscode.Uri.parse(uri)));
       } else {
-        await compareFolders(vscode.Uri.file(result.origin.root));
+        // Build the context explicitly: the stamped serviceId resolves the
+        // service even when the origin uri lies outside every trie prefix
+        // (out-of-workspace mirror roots), and getConfig() re-merges the
+        // ACTIVE profile so a refresh follows profile switches.
+        await compareFolders(
+          folderCompareCtx(vscode.Uri.parse(result.origin.uri), result.serviceId)
+        );
       }
     } catch (error) {
       reportError(error);
     }
   }
+}
+
+function folderCompareCtx(uri: vscode.Uri, serviceId?: number): FileHandlerContext {
+  let fileService =
+    serviceId != null
+      ? getAllFileService().find(service => service.id === serviceId)
+      : undefined;
+  if (!fileService) {
+    fileService = getFileService(uri);
+  }
+  if (!fileService) {
+    throw new Error(`Config Not Found. (${uri.toString(true)})`);
+  }
+
+  const config = fileService.getConfig();
+  const target = UResource.from(uri, {
+    localBasePath: fileService.baseDir,
+    remoteBasePath: config.remotePath,
+    remoteId: fileService.id,
+    remote: {
+      host: config.host,
+      port: config.port,
+    },
+  });
+
+  return { fileService, config, target, originUri: uri };
 }

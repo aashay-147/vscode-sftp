@@ -180,6 +180,8 @@ export async function stageAndConfirmFolderTransfer(
         ignore: option.ignore,
         compareMtime,
         serviceName: ctx.fileService.name,
+        serviceId: ctx.fileService.id,
+        originUri: ctx.target.localUri.toString(),
         concurrency: ctx.config.concurrency,
         control: {
           isCancelled,

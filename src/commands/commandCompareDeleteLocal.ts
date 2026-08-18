@@ -1,9 +1,9 @@
-import { Uri } from 'vscode';
 import { COMMAND_COMPARE_DELETE_LOCAL, COMMAND_COMPARE_REFRESH } from '../constants';
 import { removeLocal } from '../fileHandlers';
 import { executeCommand, showConfirmMessageModal } from '../host';
 import { checkCommand } from './abstract/createCommand';
 import { canDeleteCompareLocal } from './compareNode';
+import { ctxFromCompareEntry } from './shared';
 
 export default checkCommand({
   id: COMMAND_COMPARE_DELETE_LOCAL,
@@ -23,7 +23,7 @@ export default checkCommand({
     }
 
     try {
-      await removeLocal(Uri.file(entry.localFsPath));
+      await removeLocal(ctxFromCompareEntry(entry));
     } finally {
       await executeCommand(COMMAND_COMPARE_REFRESH);
     }

@@ -1,9 +1,9 @@
-import { Uri } from 'vscode';
 import { COMMAND_COMPARE_DELETE_REMOTE, COMMAND_COMPARE_REFRESH } from '../constants';
 import { removeRemote } from '../fileHandlers';
 import { executeCommand, showConfirmMessageModal } from '../host';
 import { checkCommand } from './abstract/createCommand';
 import { canDeleteCompareRemote } from './compareNode';
+import { ctxFromCompareEntry } from './shared';
 
 export default checkCommand({
   id: COMMAND_COMPARE_DELETE_REMOTE,
@@ -23,7 +23,7 @@ export default checkCommand({
     }
 
     try {
-      await removeRemote(Uri.file(entry.localFsPath));
+      await removeRemote(ctxFromCompareEntry(entry));
     } finally {
       await executeCommand(COMMAND_COMPARE_REFRESH);
     }

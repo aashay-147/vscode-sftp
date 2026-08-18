@@ -14,6 +14,10 @@ export interface FileHandlerContext {
   target: UResource;
   fileService: FileService;
   config: ServiceConfig;
+  // the uri the command was invoked with (the side the user clicked), when
+  // the context was built from one — compare uses it to tell a remote-origin
+  // walk from a local-origin one (Feature 9 root derivation)
+  originUri?: Uri;
 }
 
 type FileHandlerContextMethod<R = void> = (this: FileHandlerContext) => R;
@@ -51,6 +55,7 @@ export function handleCtxFromUri(uri: Uri): FileHandlerContext {
     fileService,
     config,
     target,
+    originUri: uri,
   };
 }
 
@@ -81,6 +86,7 @@ export function allHandleCtxFromUri(uri: Uri): Array<FileHandlerContext> {
       fileService,
       config,
       target,
+      originUri: uri,
     };
   })
 }

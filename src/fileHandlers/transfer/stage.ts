@@ -57,6 +57,10 @@ export async function stageFolderTransfer(args: {
   ignore: FileHandleOption['ignore'];
   compareMtime: boolean;
   serviceName?: string;
+  serviceId?: number;
+  // stringified uri of the transfer's local root — becomes the Review
+  // result's folder origin so Refresh re-derives roots from the live config
+  originUri: string;
   control?: WalkControl;
   // bound on concurrent list() calls per side during the walk (Feature 4)
   concurrency?: number;
@@ -70,6 +74,8 @@ export async function stageFolderTransfer(args: {
     ignore,
     compareMtime,
     serviceName,
+    serviceId,
+    originUri,
     control,
     concurrency,
   } = args;
@@ -115,7 +121,7 @@ export async function stageFolderTransfer(args: {
       compareMtime
     );
     if (entry) {
-      entries.push(entry);
+      entries.push({ ...entry, serviceId });
     } else if (remoteEntry) {
       identical.push(fromLocal ? localEntry.fspath : remoteEntry.fspath);
     }
@@ -132,7 +138,7 @@ export async function stageFolderTransfer(args: {
       compareMtime
     );
     if (entry) {
-      entries.push(entry);
+      entries.push({ ...entry, serviceId });
     }
   });
   entries.sort((a, b) => a.relPath.localeCompare(b.relPath));
@@ -160,7 +166,8 @@ export async function stageFolderTransfer(args: {
       localRoot: localFsPath,
       remoteRoot: remoteFsPath,
       serviceName,
-      origin: { kind: 'folder', root: localFsPath },
+      serviceId,
+      origin: { kind: 'folder', uri: originUri },
       entries,
     },
     identical,

@@ -1,11 +1,10 @@
-import { Uri } from 'vscode';
 import { COMMAND_COMPARE_GROUP_UPLOAD } from '../constants';
 import { uploadFile } from '../fileHandlers';
 import { CompareStatus } from '../fileHandlers/compare';
 import { showConfirmMessageModal } from '../host';
 import { checkCommand } from './abstract/createCommand';
 import { compareGroupEntries, runCompareGroup } from './shared';
-import { filterUploadableUris } from './uploadGuard';
+import { filterUploadableCompareEntries } from './uploadGuard';
 
 // Upload every file in a compare group to the remote. Additive for a New-Local
 // group (the files don't exist remotely yet); for a Modified group it overwrites
@@ -21,12 +20,7 @@ export default checkCommand({
 
     // restrictUploadsToLocalDownloadPath: drop blocked entries with one
     // aggregate warning before counting the modal
-    const allowedFsPaths = new Set(
-      filterUploadableUris(entries.map(entry => Uri.file(entry.localFsPath))).map(
-        uri => uri.fsPath
-      )
-    );
-    entries = entries.filter(entry => allowedFsPaths.has(Uri.file(entry.localFsPath).fsPath));
+    entries = filterUploadableCompareEntries(entries);
     if (!entries.length) {
       return;
     }
@@ -45,8 +39,8 @@ export default checkCommand({
     // per-file overwrite prompt so a Modified group doesn't fire N more prompts.
     // skipUnmodified off: entries are known-different, re-checking wastes a
     // round-trip.
-    await runCompareGroup(entries, uri =>
-      uploadFile(uri, { ignore: null, confirmOverwrite: false, skipUnmodified: false })
+    await runCompareGroup(entries, ctx =>
+      uploadFile(ctx, { ignore: null, confirmOverwrite: false, skipUnmodified: false })
     );
   },
 });

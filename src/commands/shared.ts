@@ -1,12 +1,13 @@
 import * as path from 'path';
 import { Uri, window } from 'vscode';
-import { FileType } from '../core';
+import { FileType, UResource } from '../core';
 import app from '../app';
 import { COMMAND_COMPARE_REFRESH } from '../constants';
-import { getAllFileService } from '../modules/serviceManager';
+import { getAllFileService, getFileService } from '../modules/serviceManager';
 import { ExplorerItem } from '../modules/remoteExplorer';
-import { CompareItem, CompareNode } from '../modules/compareExplorer';
+import { CompareNode } from '../modules/compareExplorer';
 import { CompareEntry } from '../fileHandlers/compare';
+import { FileHandlerContext } from '../fileHandlers';
 import { executeCommand, getActiveTextEditor } from '../host';
 import { listFiles, toLocalPath, simplifyPath, reportError } from '../helper';
 
@@ -162,13 +163,39 @@ export function selectFolderFallbackToConfigContext(item, items): Promise<undefi
   return selectContext();
 }
 
-// file entry selected in the folder-compare view
-export function uriFromCompareItem(item: CompareItem): Uri | undefined {
-  if (!item || item.kind !== 'entry') {
-    return;
+// Exact context for a compare row: the service is resolved by the id stamped
+// on the entry (fallback: the config trie), and the target is built as an
+// exact local/remote pair (rel '' against both bases), so mirror rows and
+// out-of-workspace roots act on precisely the pair the compare walk resolved —
+// no round-trip through Uri.file(localFsPath).
+export function ctxFromCompareEntry(entry: {
+  localFsPath: string;
+  remoteFsPath: string;
+  serviceId?: number;
+}): FileHandlerContext {
+  let fileService =
+    entry.serviceId != null
+      ? getAllFileService().find(service => service.id === entry.serviceId)
+      : undefined;
+  if (!fileService) {
+    fileService = getFileService(Uri.file(entry.localFsPath));
+  }
+  if (!fileService) {
+    throw new Error(`Config Not Found. (${entry.localFsPath})`);
   }
 
-  return Uri.file(item.entry.localFsPath);
+  const config = fileService.getConfig();
+  const target = UResource.from(Uri.file(entry.localFsPath), {
+    localBasePath: entry.localFsPath,
+    remoteBasePath: entry.remoteFsPath,
+    remoteId: fileService.id,
+    remote: {
+      host: config.host,
+      port: config.port,
+    },
+  });
+
+  return { fileService, config, target, originUri: Uri.file(entry.localFsPath) };
 }
 
 // All entries belonging to a folder-compare group header, pulled from the live
@@ -194,11 +221,11 @@ export function compareGroupEntries(node: CompareNode): CompareEntry[] {
 // the rest of the batch.
 export async function runCompareGroup(
   entries: CompareEntry[],
-  run: (uri: Uri) => Promise<unknown>
+  run: (ctx: FileHandlerContext) => Promise<unknown>
 ): Promise<void> {
   for (const entry of entries) {
     try {
-      await run(Uri.file(entry.localFsPath));
+      await run(ctxFromCompareEntry(entry));
     } catch (error) {
       reportError(error);
     }

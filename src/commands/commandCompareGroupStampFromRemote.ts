@@ -14,6 +14,6 @@ export default checkCommand({
       return;
     }
 
-    await runCompareGroup(entries, uri => matchTimestamp(uri, { source: 'remote' }));
+    await runCompareGroup(entries, ctx => matchTimestamp(ctx, { source: 'remote' }));
   },
 });
