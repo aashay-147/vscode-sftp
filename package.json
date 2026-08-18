@@ -125,7 +125,8 @@
       {
         "command": "sftp.upload.file",
         "title": "Upload File",
-        "category": "SFTP"
+        "category": "SFTP",
+        "enablement": "!sftp.uploadRestricted || resourceScheme != file || resourceDirname in sftp.uploadableDirs"
       },
       {
         "command": "sftp.upload.changedFiles",
@@ -144,7 +145,8 @@
       {
         "command": "sftp.upload.folder",
         "title": "Upload Folder",
-        "category": "SFTP"
+        "category": "SFTP",
+        "enablement": "!sftp.uploadRestricted || resourceScheme != file || resourcePath in sftp.uploadableDirs"
       },
       {
         "command": "sftp.upload.activeFolder",
@@ -164,7 +166,8 @@
       {
         "command": "sftp.upload.file.to.allProfiles",
         "title": "Upload File To All Profiles",
-        "category": "SFTP"
+        "category": "SFTP",
+        "enablement": "!sftp.uploadRestricted || resourceScheme != file || resourceDirname in sftp.uploadableDirs"
       },
       {
         "command": "sftp.upload.activeFile.to.allProfiles",
@@ -174,7 +177,8 @@
       {
         "command": "sftp.upload.folder.to.allProfiles",
         "title": "Upload Folder To All Profiles",
-        "category": "SFTP"
+        "category": "SFTP",
+        "enablement": "!sftp.uploadRestricted || resourceScheme != file || resourcePath in sftp.uploadableDirs"
       },
       {
         "command": "sftp.upload.activeFolder.to.allProfiles",
@@ -232,7 +236,8 @@
       {
         "command": "sftp.sync.localToRemote",
         "title": "Sync Local -> Remote",
-        "category": "SFTP"
+        "category": "SFTP",
+        "enablement": "!sftp.uploadRestricted || resourceScheme != file || resourcePath in sftp.uploadableDirs"
       },
       {
         "command": "sftp.sync.remoteToLocal",
@@ -242,7 +247,8 @@
       {
         "command": "sftp.sync.bothDirections",
         "title": "Sync Both Directions",
-        "category": "SFTP"
+        "category": "SFTP",
+        "enablement": "!sftp.uploadRestricted || resourceScheme != file || resourcePath in sftp.uploadableDirs"
       },
       {
         "command": "sftp.diff",
