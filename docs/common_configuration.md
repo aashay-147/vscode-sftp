@@ -293,24 +293,26 @@ Relative paths resolve against `context`; `~/` and absolute paths (including fol
 
 **In-workspace mirrors and uploadOnSave.** A mirror inside the workspace (like `./_downloads`) is still part of the workspace mapping for implicit flows, so saving a mirror file with `uploadOnSave` on uploads it to `/remote/_downloads/...`. Fence it off with `"ignore": ["_downloads"]` if that matters to you.
 
-### restrictUploadsToLocalDownloadPath
-A safety fence for the mirror workflow: block explicit uploads of anything **outside** the mirror.
+**Upload restriction (implicit).** Whenever `localDownloadPath` is set, explicit uploads - including `Upload Project`, `Upload Changed Files`, compare-view uploads, and `Sync Local ➞ Remote` / `Sync Both Directions` - of files **outside** the mirror are blocked with:
+
+> `'<path>' is outside localDownloadPath (<base>) - upload blocked`
+
+There is no off switch: an out-of-mirror upload would land at the workspace `context` mapping (or even above `remotePath` for files outside the workspace) and then circulate back down into the mirror on the next download. Multi-file selections drop the blocked files with one aggregate warning and transfer the rest. `uploadOnSave` and the watcher are not gated (disable them instead if you don't want implicit uploads).
+
+### disableUploadMenusOutsideLocalDownloadPath
+Gray out the upload menu items for files outside the mirror, instead of only warning after the click.
 
 | Key | Value | Default |
 | --- | --- | --- |
-| *restrictUploadsToLocalDownloadPath* | *boolean* | `false` |
+| *disableUploadMenusOutsideLocalDownloadPath* | *boolean* | `false` |
 
 ```json
 {
-  "restrictUploadsToLocalDownloadPath": true
+  "disableUploadMenusOutsideLocalDownloadPath": true
 }
 ```
 
-When on (and `localDownloadPath` is set), explicit uploads - including `Upload Project`, `Upload Changed Files`, compare-view uploads, and `Sync Local ➞ Remote` / `Sync Both Directions` - of files outside the mirror are blocked with:
-
-> `'<path>' is outside localDownloadPath (<base>) - upload blocked by restrictUploadsToLocalDownloadPath`
-
-Multi-file selections drop the blocked files with one aggregate warning and transfer the rest. Without `localDownloadPath` the option is inert. `uploadOnSave` and the watcher are not gated (disable them instead if you don't want implicit uploads).
+When on (and `localDownloadPath` is set), the `Upload File/Folder`, `Upload ... To All Profiles`, `Sync Local ➞ Remote` and `Sync Both Directions` context-menu items are disabled (grayed out) for files and folders outside the mirror. Pure UX sugar on top of the implicit upload block above, which always applies. Maintaining the menu state costs a directory walk of the mirror after downloads and config changes - leave this off if the warning alone is enough. Surfaces VS Code can't gate statically (Command Palette, multi-select mixes) stay enabled and fall through to the runtime block.
 
 ### ignore
 Ignore can be used to ignore files and folders from sync, and even supports wildcards using `*`. <br>

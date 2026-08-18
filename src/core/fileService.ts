@@ -51,7 +51,9 @@ interface ServiceOption {
   // config) - resolution against baseDir is centralized in
   // helper/paths.resolveLocalDownloadPathBase.
   localDownloadPath?: string;
-  restrictUploadsToLocalDownloadPath?: boolean;
+  // Opt-in UX sugar on top of the implicit upload guard: gray out the upload
+  // menu items for files outside the mirror (guard enforces regardless).
+  disableUploadMenusOutsideLocalDownloadPath?: boolean;
   // Feature 4: size of the per-profile remote connection pool. Default 1 keeps
   // the historical single-shared-connection behavior; the effective pool size
   // is min(maxConnections, concurrency, MAX_POOL_SIZE) and always 1 for FTP.
@@ -181,7 +183,7 @@ function getHostInfo(config) {
     // mirror settings must not enter the connect-option hash - two profiles
     // differing only in them must share one connection pool
     'localDownloadPath',
-    'restrictUploadsToLocalDownloadPath',
+    'disableUploadMenusOutsideLocalDownloadPath',
     'ignore',
     'ignoreFile',
     'watcher',

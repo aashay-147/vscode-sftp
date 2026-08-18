@@ -1,4 +1,4 @@
-// Command-layer enforcement of `restrictUploadsToLocalDownloadPath`
+// Command-layer enforcement of the localDownloadPath upload restriction
 // (Feature 9). Only explicit upload/sync commands call these - the transfer
 // layer is untouched, so internal callers (uploadOnSave, watcher) are
 // unaffected by design. The predicate itself lives in
@@ -13,6 +13,15 @@ import {
 } from '../fileHandlers/transfer/downloadTarget';
 import { ctxFromCompareEntry } from './shared';
 
+// Points the user at the opt-in menu graying when they hit the guard the hard
+// way. Suppressed once the setting is already on - the grayed items speak for
+// themselves and only guard-only surfaces (palette, multi-select) reach here.
+function menuHint(ctx: FileHandlerContext | undefined): string {
+  return !ctx || ctx.config.disableUploadMenusOutsideLocalDownloadPath
+    ? ''
+    : ' (set "disableUploadMenusOutsideLocalDownloadPath": true to gray out these menu items)';
+}
+
 // True when the upload may proceed; otherwise shows the blocking warning and
 // returns false. Callers simply `if (!ensureUploadAllowed(ctx)) return;`.
 export function ensureUploadAllowed(ctx: FileHandlerContext): boolean {
@@ -23,7 +32,7 @@ export function ensureUploadAllowed(ctx: FileHandlerContext): boolean {
   showWarningMessage(
     `'${ctx.target.localFsPath}' is outside localDownloadPath (${getDownloadPathBase(
       ctx
-    )}) - upload blocked by restrictUploadsToLocalDownloadPath`
+    )}) - upload blocked${menuHint(ctx)}`
   );
   return false;
 }
@@ -35,10 +44,13 @@ export function filterUploadableCompareEntries<
   T extends { localFsPath: string; remoteFsPath: string; serviceId?: number }
 >(entries: T[]): T[] {
   let blockedCount = 0;
+  let blockedCtx: FileHandlerContext | undefined;
   const allowed = entries.filter(entry => {
     try {
-      if (isUploadBlockedByDownloadPath(ctxFromCompareEntry(entry))) {
+      const ctx = ctxFromCompareEntry(entry);
+      if (isUploadBlockedByDownloadPath(ctx)) {
         blockedCount += 1;
+        blockedCtx = ctx;
         return false;
       }
     } catch (error) {
@@ -49,7 +61,7 @@ export function filterUploadableCompareEntries<
 
   if (blockedCount > 0) {
     showWarningMessage(
-      `${blockedCount} file(s) outside localDownloadPath - upload blocked by restrictUploadsToLocalDownloadPath`
+      `${blockedCount} file(s) outside localDownloadPath - upload blocked${menuHint(blockedCtx)}`
     );
   }
   return allowed;
@@ -61,6 +73,7 @@ export function filterUploadableCompareEntries<
 export function filterUploadableUris(uris: Uri[]): Uri[] {
   const allowed: Uri[] = [];
   const blocked: string[] = [];
+  let blockedCtx: FileHandlerContext | undefined;
   for (const uri of uris) {
     let ctx: FileHandlerContext;
     try {
@@ -71,6 +84,7 @@ export function filterUploadableUris(uris: Uri[]): Uri[] {
     }
     if (isUploadBlockedByDownloadPath(ctx)) {
       blocked.push(ctx.target.localFsPath);
+      blockedCtx = ctx;
     } else {
       allowed.push(uri);
     }
@@ -78,7 +92,7 @@ export function filterUploadableUris(uris: Uri[]): Uri[] {
 
   if (blocked.length > 0) {
     showWarningMessage(
-      `${blocked.length} file(s) outside localDownloadPath - upload blocked by restrictUploadsToLocalDownloadPath`
+      `${blocked.length} file(s) outside localDownloadPath - upload blocked${menuHint(blockedCtx)}`
     );
   }
   return allowed;

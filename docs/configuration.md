@@ -23,7 +23,7 @@ The configuration file can always be accessed with `CTRL` + `Shift` + `P`, and s
 - [openSsh](#openssh)
 - [downloadOnOpen](#downloadonopen)
 - [localDownloadPath](#localdownloadpath)
-- [restrictUploadsToLocalDownloadPath](#restrictuploadstolocaldownloadpath)
+- [disableUploadMenusOutsideLocalDownloadPath](#disableuploadmenusoutsidelocaldownloadpath)
 - [syncOption](#syncoption)
 - [ignore](#ignore)
 - [ignoreFile](#ignorefile)
@@ -243,7 +243,7 @@ Download the file from the remote server whenever it is opened.
 ```
 
 ### localDownloadPath
-Local mirror folder for explicit transfers. Explicit downloads land here, preserving the remote folder structure, instead of the workspace `context`; explicit uploads, re-downloads, compare, and diff of files **under** this folder automatically map back to the matching remote path. Relative paths resolve against `context`; `~/` and absolute paths are supported. Overridable per profile. See [common configuration](./common_configuration.md#localdownloadpath) for the full semantics.
+Local mirror folder for explicit transfers. Explicit downloads land here, preserving the remote folder structure, instead of the workspace `context`; explicit uploads, re-downloads, compare, and diff of files **under** this folder automatically map back to the matching remote path. When set, explicit uploads and local-to-remote sync of files **outside** the mirror are blocked with a warning (`uploadOnSave` and the watcher are unaffected). Relative paths resolve against `context`; `~/` and absolute paths are supported. Overridable per profile. See [common configuration](./common_configuration.md#localdownloadpath) for the full semantics.
 
 | Key | Value | Default |
 | --- | --- | --- |
@@ -255,16 +255,16 @@ Local mirror folder for explicit transfers. Explicit downloads land here, preser
 }
 ```
 
-### restrictUploadsToLocalDownloadPath
-When `true` (and `localDownloadPath` is set), explicit uploads and local-to-remote sync of files **outside** the mirror folder are blocked with a warning. Inert without `localDownloadPath`. Does not affect `uploadOnSave` or the watcher.
+### disableUploadMenusOutsideLocalDownloadPath
+When `true` (and `localDownloadPath` is set), the upload and local-to-remote sync context-menu items are grayed out (disabled) for files and folders outside the mirror. Pure UX sugar - the upload block itself always applies whenever `localDownloadPath` is set. Costs a directory walk of the mirror to maintain; leave `false` if the warning alone is enough. See [common configuration](./common_configuration.md#disableuploadmenusoutsidelocaldownloadpath).
 
 | Key | Value | Default |
 | --- | --- | --- |
-| *restrictUploadsToLocalDownloadPath* | *boolean* | `false` |
+| *disableUploadMenusOutsideLocalDownloadPath* | *boolean* | `false` |
 
 ```json
 {
-  "restrictUploadsToLocalDownloadPath": true
+  "disableUploadMenusOutsideLocalDownloadPath": true
 }
 ```
 

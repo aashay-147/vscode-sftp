@@ -72,11 +72,11 @@
       },
       "localDownloadPath": {
         "type": "string",
-        "description": "Local mirror folder for explicit transfers. Explicit downloads land here (preserving the remote folder structure) instead of the workspace context, and explicit uploads/re-downloads/compare/diff of files under this folder automatically map back to the matching remote path. Relative paths resolve against `context`; `~/` and absolute paths are supported; per-profile overridable. Implicit flows (uploadOnSave, watcher, sync, downloadOnOpen, Edit in Local, List) keep the workspace mapping. Unset = mirror off."
+        "description": "Local mirror folder for explicit transfers. Explicit downloads land here (preserving the remote folder structure) instead of the workspace context, and explicit uploads/re-downloads/compare/diff of files under this folder automatically map back to the matching remote path. When set, explicit uploads and local-to-remote sync of files OUTSIDE the mirror are blocked with a warning (uploadOnSave and the watcher are unaffected). Relative paths resolve against `context`; `~/` and absolute paths are supported; per-profile overridable. Implicit flows (uploadOnSave, watcher, sync, downloadOnOpen, Edit in Local, List) keep the workspace mapping. Unset = mirror off."
       },
-      "restrictUploadsToLocalDownloadPath": {
+      "disableUploadMenusOutsideLocalDownloadPath": {
         "type": "boolean",
-        "description": "When true (and `localDownloadPath` is set), explicit uploads and local-to-remote sync of files OUTSIDE the mirror folder are blocked with a warning - a safety fence so only files downloaded into the mirror can go back up. Inert without `localDownloadPath`. Does not affect uploadOnSave or the watcher.",
+        "description": "When true (and `localDownloadPath` is set), the upload and local-to-remote sync context-menu items are additionally grayed out (disabled) for files and folders outside the mirror. Pure UX sugar - the upload block itself always applies whenever `localDownloadPath` is set. Costs a directory walk of the mirror to maintain; leave false if the warning alone is enough.",
         "default": false
       },
       "confirmOverwrite": {

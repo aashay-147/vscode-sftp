@@ -48,17 +48,16 @@ export function resolveRemoteFsPathFromDownloadPath(
   return toRemotePath(localFsPath, base, ctx.config.remotePath);
 }
 
-// Pure predicate behind `restrictUploadsToLocalDownloadPath`: an upload is
-// blocked when the restriction is on, a mirror base is configured, and the
-// local path lies outside it. Without a configured mirror the restriction is
-// inert (nothing to restrict to).
+// Pure upload-guard predicate: whenever a mirror is configured
+// (localDownloadPath set), explicit uploads of files OUTSIDE it are blocked.
+// The restriction is implicit - an out-of-mirror upload would land at the
+// workspace-context mapping (or above remotePath for out-of-context files)
+// and then circulate back into the mirror on the next download, so there is
+// no safe unrestricted mode. Without a configured mirror nothing is blocked.
 export function isUploadBlockedByDownloadPath(
   ctx: FileHandlerContext,
   localFsPath: string = ctx.target.localFsPath
 ): boolean {
-  if (!ctx.config.restrictUploadsToLocalDownloadPath) {
-    return false;
-  }
   const base = getDownloadPathBase(ctx);
   if (!base) {
     return false;

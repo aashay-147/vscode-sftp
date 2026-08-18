@@ -18,7 +18,7 @@ export default checkCommand({
       return;
     }
 
-    // restrictUploadsToLocalDownloadPath: drop blocked entries with one
+    // localDownloadPath upload guard: drop blocked entries with one
     // aggregate warning before counting the modal
     entries = filterUploadableCompareEntries(entries);
     if (!entries.length) {

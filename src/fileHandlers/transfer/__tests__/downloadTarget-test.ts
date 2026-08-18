@@ -34,7 +34,6 @@ const REMOTE_PATH = '/var/www';
 function createCtx(options: {
   localDownloadPath?: string;
   localFsPath?: string;
-  restrictUploadsToLocalDownloadPath?: boolean;
 }): FileHandlerContext {
   const localFsPath = options.localFsPath || path.join(BASE_DIR, 'src', 'a.txt');
   const target = UResource.from(Uri.file(localFsPath), {
@@ -48,7 +47,6 @@ function createCtx(options: {
     config: {
       remotePath: REMOTE_PATH,
       localDownloadPath: options.localDownloadPath,
-      restrictUploadsToLocalDownloadPath: options.restrictUploadsToLocalDownloadPath,
       host: 'example.com',
       port: 22,
     },
@@ -155,36 +153,26 @@ describe('resolveRemoteFsPathFromDownloadPath (inverse mapping)', () => {
   });
 });
 
-describe('isUploadBlockedByDownloadPath (restrictUploadsToLocalDownloadPath)', () => {
+describe('isUploadBlockedByDownloadPath (implicit mirror upload guard)', () => {
   const MIRROR_LOCAL = path.join(BASE_DIR, '_downloads', 'src', 'a.txt');
   const WORKSPACE_LOCAL = path.join(BASE_DIR, 'src', 'a.txt');
 
-  test('restriction off: never blocked', () => {
-    const ctx = createCtx({ localDownloadPath: '_downloads', localFsPath: WORKSPACE_LOCAL });
+  test('no mirror configured: inert, never blocked', () => {
+    const ctx = createCtx({ localFsPath: WORKSPACE_LOCAL });
     expect(isUploadBlockedByDownloadPath(ctx)).toBe(false);
   });
 
-  test('restriction on without a mirror: inert, never blocked', () => {
-    const ctx = createCtx({
-      restrictUploadsToLocalDownloadPath: true,
-      localFsPath: WORKSPACE_LOCAL,
-    });
-    expect(isUploadBlockedByDownloadPath(ctx)).toBe(false);
-  });
-
-  test('restriction on, file under the mirror: allowed', () => {
+  test('mirror configured, file under the mirror: allowed', () => {
     const ctx = createCtx({
       localDownloadPath: '_downloads',
-      restrictUploadsToLocalDownloadPath: true,
       localFsPath: MIRROR_LOCAL,
     });
     expect(isUploadBlockedByDownloadPath(ctx)).toBe(false);
   });
 
-  test('restriction on, file outside the mirror: blocked', () => {
+  test('mirror configured, file outside the mirror: blocked', () => {
     const ctx = createCtx({
       localDownloadPath: '_downloads',
-      restrictUploadsToLocalDownloadPath: true,
       localFsPath: WORKSPACE_LOCAL,
     });
     expect(isUploadBlockedByDownloadPath(ctx)).toBe(true);
@@ -193,7 +181,6 @@ describe('isUploadBlockedByDownloadPath (restrictUploadsToLocalDownloadPath)', (
   test('explicit localFsPath argument overrides the target', () => {
     const ctx = createCtx({
       localDownloadPath: '_downloads',
-      restrictUploadsToLocalDownloadPath: true,
       localFsPath: MIRROR_LOCAL,
     });
     expect(isUploadBlockedByDownloadPath(ctx, WORKSPACE_LOCAL)).toBe(true);
