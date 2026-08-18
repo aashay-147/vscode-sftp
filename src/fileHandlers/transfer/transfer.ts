@@ -18,7 +18,7 @@ interface InternalTransferOption extends FileHandleOption, TransferTaskTransferO
   // per-file prompts are suppressed for the rest of that walk.
   _overwriteConfirmed?: boolean;
   // Internal (not a config field): ABSOLUTE source fsPaths staged as identical
-  // — transferWithType drops them without collecting a task (skipUnmodified).
+  // - transferWithType drops them without collecting a task (skipUnmodified).
   _skipSet?: Set<string>;
   // Internal (not a config field): set by the *.to.allProfiles commands so the
   // staged modal offers [Transfer]/[Skip This Profile]/[Cancel remaining] and
@@ -175,7 +175,7 @@ async function transferWithType(
     case FileType.File:
     case FileType.SymbolicLink:
       // Staged as identical (skipUnmodified): drop the file before any side
-      // effect — no save-before-upload, no task collected. Keyed by absolute
+      // effect - no save-before-upload, no task collected. Keyed by absolute
       // source path because that's all this function ever sees.
       if (config.transferOption._skipSet && config.transferOption._skipSet.has(config.srcFsPath)) {
         return;
@@ -204,7 +204,7 @@ async function transferWithType(
       // save before upload: end >>>
       // Overwrite confirmation for a single-file transfer. Skipped when a folder
       // walk already confirmed for this run (`_overwriteConfirmed`), and skipped
-      // entirely — no destination `lstat` — when the option is off, preserving
+      // entirely - no destination `lstat` - when the option is off, preserving
       // the zero-round-trip default. TOCTOU is accepted: the check runs at
       // collect time, the put/get later in the scheduler.
       if (

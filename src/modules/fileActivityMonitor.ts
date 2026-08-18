@@ -51,7 +51,7 @@ async function handleFileSave(uri: vscode.Uri) {
     logger.info(`[file-save] ${fspath}`);
     try {
       // Implicit path: uploadOnSave must never prompt or stage, whatever the
-      // profile's confirmOverwrite/skipUnmodified values — the call-site
+      // profile's confirmOverwrite/skipUnmodified values - the call-site
       // override wins over transformOption.
       await uploadFile(uri, { confirmOverwrite: false, skipUnmodified: false, _noProgress: true });
     } catch (error) {

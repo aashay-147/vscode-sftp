@@ -6,7 +6,7 @@ import { compareGroupEntries, runCompareGroup } from './shared';
 
 // Mirror-delete a New-Remote group: these files exist only on the remote, so
 // making the remote match local means removing them. Destructive and
-// irreversible — gated behind a modal confirm that names the count.
+// irreversible - gated behind a modal confirm that names the count.
 export default checkCommand({
   id: COMMAND_COMPARE_GROUP_DELETE_REMOTE,
 

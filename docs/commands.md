@@ -58,7 +58,7 @@ func(fspaths: string[])
 Stop the current transfers (upload and download). Queued files are dropped; in-flight files finish.
 
 ### SFTP: Pause All Transfers (`sftp.transfer.pause`)
-Pause all running transfer operations globally. Paused operations keep their queue and show *Paused — N/M* in their progress notification.
+Pause all running transfer operations globally. Paused operations keep their queue and show *Paused - N/M* in their progress notification.
 
 ### SFTP: Resume All Transfers (`sftp.transfer.resume`)
 Resume transfers previously paused with `Pause All Transfers`.
@@ -91,7 +91,7 @@ Toggle the view layout between the flat status lists and a nested path tree (vie
 From a Remote Explorer file, open a diff of the remote file against its local counterpart (the mirror of `Diff with Remote`).
 
 
-## Folder Compare — group actions
+## Folder Compare - group actions
 
 These commands appear only on a **group header** in the Folder Compare view (not in the command palette). They act on every file in that status group and refresh the comparison once when done. Destructive actions prompt with a modal confirmation.
 
@@ -101,10 +101,10 @@ Download every file in the group (New Remote / Modified), overwriting the local 
 ### Upload to Remote (`sftp.compare.group.upload`)
 Upload every file in the group (New Local / Modified), overwriting the remote copy. On a Modified group this overwrites remote content and asks to confirm first.
 
-### Match Timestamp — Use Remote (`sftp.compare.group.stampFromRemote`)
+### Match Timestamp - Use Remote (`sftp.compare.group.stampFromRemote`)
 For a Timestamp Only group, set each local file's modification time to match the remote. No content is transferred.
 
-### Match Timestamp — Use Local (`sftp.compare.group.stampFromLocal`)
+### Match Timestamp - Use Local (`sftp.compare.group.stampFromLocal`)
 For a Timestamp Only group, set each remote file's modification time to match the local. No content is transferred.
 
 ### Delete on Remote (`sftp.compare.group.deleteRemote`)

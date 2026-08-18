@@ -166,7 +166,7 @@ export function selectFolderFallbackToConfigContext(item, items): Promise<undefi
 // Exact context for a compare row: the service is resolved by the id stamped
 // on the entry (fallback: the config trie), and the target is built as an
 // exact local/remote pair (rel '' against both bases), so mirror rows and
-// out-of-workspace roots act on precisely the pair the compare walk resolved —
+// out-of-workspace roots act on precisely the pair the compare walk resolved -
 // no round-trip through Uri.file(localFsPath).
 export function ctxFromCompareEntry(entry: {
   localFsPath: string;

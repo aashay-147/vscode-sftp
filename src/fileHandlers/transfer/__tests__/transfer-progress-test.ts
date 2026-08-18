@@ -1,4 +1,4 @@
-// Feature 5 — runTransferScheduler: determinate per-operation progress over a
+// Feature 5 - runTransferScheduler: determinate per-operation progress over a
 // collected scheduler. Gates (single-task runs and empty runs never pop a
 // notification), total = collected task count, per-task increments,
 // notification Cancel stops only that operation, and the paused message.
@@ -75,7 +75,7 @@ describe('runTransferScheduler (Feature 5)', () => {
     expect(reportMock).toHaveBeenCalledTimes(3);
     const updates = reportMock.mock.calls.map(call => call[0]);
     updates.forEach(update => expect(update.increment).toBeCloseTo(100 / 3));
-    expect(updates[2].message).toMatch(/^3\/3 — /);
+    expect(updates[2].message).toMatch(/^3\/3 - /);
   });
 
   test('single task: no notification, task still runs', async () => {
@@ -124,19 +124,19 @@ describe('runTransferScheduler (Feature 5)', () => {
     await flush();
     scheduler.pause();
     setPaused(true);
-    expect(reportMock).toHaveBeenCalledWith({ message: 'Paused — 0/2' });
+    expect(reportMock).toHaveBeenCalledWith({ message: 'Paused - 0/2' });
 
     first.finish();
     await flush();
     // task events keep the paused wording while paused
     expect(reportMock.mock.calls[reportMock.mock.calls.length - 1][0].message).toBe(
-      'Paused — 1/2'
+      'Paused - 1/2'
     );
 
     setPaused(false);
     scheduler.resume();
     await running;
     const finalUpdate = reportMock.mock.calls[reportMock.mock.calls.length - 1][0];
-    expect(finalUpdate.message).toMatch(/^2\/2 — /);
+    expect(finalUpdate.message).toMatch(/^2\/2 - /);
   });
 });

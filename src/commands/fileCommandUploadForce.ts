@@ -12,7 +12,7 @@ export default checkFileCommand({
     if (!ensureUploadAllowed(ctx)) {
       return;
     }
-    // Force upload never prompts, never stages, never skips — even with
+    // Force upload never prompts, never stages, never skips - even with
     // confirmOverwrite/skipUnmodified on. createFileHandler applies call-site
     // options after transformOption, so this overrides the config values and
     // preserves "force = transfer exactly this, no questions".

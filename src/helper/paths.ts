@@ -42,7 +42,7 @@ export function isPathUnder(basePath: string, pathname: string): boolean {
 
 // Resolve the configured localDownloadPath (Feature 9) to an absolute mirror
 // base: `~/` expands to the home dir, a relative path joins onto the service's
-// baseDir (join, not resolve — same rationale as serviceManager.getBasePath),
+// baseDir (join, not resolve - same rationale as serviceManager.getBasePath),
 // an absolute path is taken as-is. Returns undefined when unset so every
 // caller can treat "no mirror" as a structural no-op.
 export function resolveLocalDownloadPathBase(

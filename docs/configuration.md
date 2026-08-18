@@ -247,7 +247,7 @@ Local mirror folder for explicit transfers. Explicit downloads land here, preser
 
 | Key | Value | Default |
 | --- | --- | --- |
-| *localDownloadPath* | *string* | *(unset — mirror off)* |
+| *localDownloadPath* | *string* | *(unset - mirror off)* |
 
 ```json
 {

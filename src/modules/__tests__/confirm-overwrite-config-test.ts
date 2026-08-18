@@ -1,4 +1,4 @@
-// Features 2+3 — config validation for `confirmOverwrite` (boolean or the
+// Features 2+3 - config validation for `confirmOverwrite` (boolean or the
 // string 'confirm', mirroring `downloadOnOpen`) and `skipUnmodified`
 // (plain boolean). Both optional.
 

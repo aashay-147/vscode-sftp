@@ -32,7 +32,7 @@ export interface StageCounts {
 export interface StagePlan {
   // full classification, ready for the Compare view (Review path)
   result: CompareResult;
-  // ABSOLUTE source-side fsPaths of identical pairs — keyed by absolute path
+  // ABSOLUTE source-side fsPaths of identical pairs - keyed by absolute path
   // because transferWithType only ever sees absolute paths (never the walk root)
   identical: string[];
   counts: StageCounts;
@@ -41,7 +41,7 @@ export interface StagePlan {
 // The status a source-side entry must have to count as "create" for this
 // direction. The opposite "new" status means destination-only: those entries
 // still classify (they appear in Review) but are never part of the transfer
-// set — explicit transfer never deletes or fetches destination extras.
+// set - explicit transfer never deletes or fetches destination extras.
 function createStatus(direction: TransferDirection): CompareStatus {
   return direction === TransferDirection.LOCAL_TO_REMOTE
     ? CompareStatus.NewLocal
@@ -58,7 +58,7 @@ export async function stageFolderTransfer(args: {
   compareMtime: boolean;
   serviceName?: string;
   serviceId?: number;
-  // stringified uri of the transfer's local root — becomes the Review
+  // stringified uri of the transfer's local root - becomes the Review
   // result's folder origin so Refresh re-derives roots from the live config
   originUri: string;
   control?: WalkControl;
@@ -83,7 +83,7 @@ export async function stageFolderTransfer(args: {
   const baseControl: WalkControl = control || { isCancelled: () => false };
   const localFiles = new Map<string, FileEntry>();
   const remoteFiles = new Map<string, FileEntry>();
-  // each side gets its own limit — the local walk must not queue behind slow
+  // each side gets its own limit - the local walk must not queue behind slow
   // remote directory reads
   await Promise.all([
     collectFiles(localFs, localFsPath, localFsPath, ignore, localFiles, {
@@ -97,7 +97,7 @@ export async function stageFolderTransfer(args: {
   ]);
 
   if (control && control.isCancelled()) {
-    // partial walk — discard everything, transfer nothing
+    // partial walk - discard everything, transfer nothing
     return null;
   }
 

@@ -16,7 +16,7 @@ export interface FileHandlerContext {
   fileService: FileService;
   config: ServiceConfig;
   // the uri the command was invoked with (the side the user clicked), when
-  // the context was built from one — compare uses it to tell a remote-origin
+  // the context was built from one - compare uses it to tell a remote-origin
   // walk from a local-origin one (Feature 9 root derivation)
   originUri?: Uri;
 }
@@ -74,7 +74,7 @@ function findProfileWithBaseCovering(
         return name;
       }
     } catch (error) {
-      // invalid profile config — not a candidate
+      // invalid profile config - not a candidate
     }
   }
   return undefined;
@@ -177,7 +177,7 @@ export default function createFileHandler<T>(
     if (invokeOption.ignore && invokeOption.ignore(target.localFsPath)) {
       if (invokeOption.notifyIgnored) {
         showInformationMessage(
-          `'${path.basename(target.localFsPath)}' matches ignore — nothing transferred`
+          `'${path.basename(target.localFsPath)}' matches ignore - nothing transferred`
         );
       }
       return;

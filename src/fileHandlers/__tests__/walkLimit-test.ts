@@ -1,4 +1,4 @@
-// Feature 4 — bounded walk: collectFiles keeps at most `listLimit` directory
+// Feature 4 - bounded walk: collectFiles keeps at most `listLimit` directory
 // reads in flight per side, releases the slot before recursing (no deadlock on
 // deep trees), and releases it when list() throws.
 
@@ -15,7 +15,7 @@ jest.mock('../../app', () => ({
 }));
 jest.mock('../createFileHandler', () => ({
   __esModule: true,
-  // compare.ts calls createFileHandler() at module load — return an inert handler
+  // compare.ts calls createFileHandler() at module load - return an inert handler
   default: () => jest.fn(async () => undefined),
   handleCtxFromUri: jest.fn(),
 }));
@@ -106,7 +106,7 @@ describe('collectFiles with WalkLimit (Feature 4)', () => {
     expect(maxInFlight()).toBeGreaterThan(2);
   });
 
-  test('limit 1 walks a deep nested tree to completion — no deadlock', async () => {
+  test('limit 1 walks a deep nested tree to completion - no deadlock', async () => {
     const tree: { [dir: string]: FileEntry[] } = {
       '/root': [dirEntry('/root/a')],
       '/root/a': [dirEntry('/root/a/b')],
@@ -133,7 +133,7 @@ describe('collectFiles with WalkLimit (Feature 4)', () => {
     await collectFiles(fs, '/root', '/gone', null, out, { ...control, listLimit: limit });
     expect(out.size).toBe(0);
 
-    // the slot must be free again — a second walk on the same limit completes
+    // the slot must be free again - a second walk on the same limit completes
     const good = makeTrackedFs({ '/root': [fileEntry('/root/ok.txt')] });
     await collectFiles(good.fs, '/root', '/root', null, out, {
       ...control,

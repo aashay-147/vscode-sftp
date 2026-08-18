@@ -41,7 +41,7 @@ export const removeRemote = createFileHandler<FileHandleOption & { skipDir?: boo
 
 // Local-side counterpart of removeRemote. Used by the folder-compare view to
 // mirror-delete New-Local files (files that exist locally but not on the
-// remote). Callers must confirm first — this permanently removes local files.
+// remote). Callers must confirm first - this permanently removes local files.
 export const removeLocal = createFileHandler<FileHandleOption & { skipDir?: boolean }>({
   name: 'removeLocal',
   async handle(option) {

@@ -162,7 +162,7 @@ export default class CompareTreeDataProvider implements vscode.TreeDataProvider<
         vscode.TreeItemCollapsibleState.Collapsed
       );
       treeItem.iconPath = new (vscode.ThemeIcon as any)('folder');
-      treeItem.tooltip = `${node.relDir} — ${STATUS_LABELS[node.status]}\nlocal: ${
+      treeItem.tooltip = `${node.relDir} - ${STATUS_LABELS[node.status]}\nlocal: ${
         node.localFsPath
       }\nremote: ${node.remoteFsPath}`;
       treeItem.contextValue = `compareFolder-${node.status}`;
@@ -180,11 +180,11 @@ export default class CompareTreeDataProvider implements vscode.TreeDataProvider<
       this._grouping === 'flat' && separatorIndex !== -1
         ? entry.relPath.slice(0, separatorIndex)
         : '';
-    treeItem.tooltip = `${entry.relPath} — ${STATUS_LABELS[entry.status]}\nlocal: ${
+    treeItem.tooltip = `${entry.relPath} - ${STATUS_LABELS[entry.status]}\nlocal: ${
       entry.localFsPath
     }\nremote: ${entry.remoteFsPath}`;
     treeItem.contextValue = `compareItem-${entry.status}`;
-    // both Modified and TimeDiff open a diff on click — for TimeDiff it lets the
+    // both Modified and TimeDiff open a diff on click - for TimeDiff it lets the
     // user confirm the content really is identical (an empty diff).
     if (entry.status === CompareStatus.Modified || entry.status === CompareStatus.TimeDiff) {
       treeItem.command = {

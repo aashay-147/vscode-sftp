@@ -1,9 +1,9 @@
-// Feature 3 — the staging engine (stage.ts). Classification counts on a
+// Feature 3 - the staging engine (stage.ts). Classification counts on a
 // synthetic tree in both directions, the FTP size-only basis, and the
 // cancelled-walk contract (partial plan discarded, null returned).
 
 jest.mock('fs');
-// compare.ts (via stage.ts) transitively pulls in app/serviceManager — break
+// compare.ts (via stage.ts) transitively pulls in app/serviceManager - break
 // the require cycle exactly as createFileHandler-test does.
 jest.mock('vscode', () => {
   const catchAll = jest.requireActual('../../../../__mocks__/vscode');

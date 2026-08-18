@@ -1,6 +1,6 @@
 # SFTP Workbench
 
-A Dreamweaver-style SFTP/FTP workflow for VS Code: folder compare with click-to-diff, staged transfers with overwrite confirmation, parallel connections, and a remote explorer — on top of the classic sync/upload-on-save workflow.
+A Dreamweaver-style SFTP/FTP workflow for VS Code: folder compare with click-to-diff, staged transfers with overwrite confirmation, parallel connections, and a remote explorer - on top of the classic sync/upload-on-save workflow.
 
 > ### Credits & lineage
 >
@@ -13,19 +13,19 @@ A Dreamweaver-style SFTP/FTP workflow for VS Code: folder compare with click-to-
 
 ## Why this fork
 
-The upstream extension is a great sync tool, but it stops short of a full folder workflow: there is no way to *see* what differs between local and remote before transferring, transfers silently overwrite whatever is on the other side, and everything funnels through a single connection. SFTP Workbench adds the missing Dreamweaver-like layer — compare first, confirm overwrites, skip identical files, watch progress, and run transfers in parallel — while keeping the configuration format and every command of the original.
+The upstream extension is a great sync tool, but it stops short of a full folder workflow: there is no way to *see* what differs between local and remote before transferring, transfers silently overwrite whatever is on the other side, and everything funnels through a single connection. SFTP Workbench adds the missing Dreamweaver-like layer - compare first, confirm overwrites, skip identical files, watch progress, and run transfers in parallel - while keeping the configuration format and every command of the original.
 
 ## Features
 
 ### New in SFTP Workbench
 
-- **Folder Compare** — compare a local folder against its remote counterpart, grouped into *Modified*, *Timestamp Only*, *New Remote*, and *New Local*, with click-to-diff. Includes group (whole-category) actions, compare-selected-files, reveal in local/remote explorer, per-file delete, and a persisted Flat / Group-by-Path layout toggle. See [Folder Compare](#folder-compare).
-- **Clear Compare** — reset the Folder Compare view back to empty on demand.
-- **Overwrite confirmation** (`confirmOverwrite`) — explicit uploads/downloads prompt before overwriting an existing destination file; folder-level transfers show one summary modal with a *Review in Compare View* option.
-- **Diff-only transfer** (`skipUnmodified`) — explicit folder/project/multi-file transfers skip files already identical on the destination, the way Sync does.
-- **Local download mirror** (`localDownloadPath`) — explicit downloads land in a configurable mirror folder (per-profile, in or outside the workspace) preserving the remote structure; uploads, re-downloads, compare, and diff of mirror files automatically map back to the true remote path. Optional `restrictUploadsToLocalDownloadPath` blocks uploads from outside the mirror.
-- **Per-operation progress** — determinate per-file progress notifications with cancel, plus global pause/resume/stop for all transfers.
-- **Parallel transfers** (`maxConnections`) — a per-profile connection pool so uploads, downloads, syncs, and folder walks genuinely run in parallel.
+- **Folder Compare** - compare a local folder against its remote counterpart, grouped into *Modified*, *Timestamp Only*, *New Remote*, and *New Local*, with click-to-diff. Includes group (whole-category) actions, compare-selected-files, reveal in local/remote explorer, per-file delete, and a persisted Flat / Group-by-Path layout toggle. See [Folder Compare](#folder-compare).
+- **Clear Compare** - reset the Folder Compare view back to empty on demand.
+- **Overwrite confirmation** (`confirmOverwrite`) - explicit uploads/downloads prompt before overwriting an existing destination file; folder-level transfers show one summary modal with a *Review in Compare View* option.
+- **Diff-only transfer** (`skipUnmodified`) - explicit folder/project/multi-file transfers skip files already identical on the destination, the way Sync does.
+- **Local download mirror** (`localDownloadPath`) - explicit downloads land in a configurable mirror folder (per-profile, in or outside the workspace) preserving the remote structure; uploads, re-downloads, compare, and diff of mirror files automatically map back to the true remote path. Optional `restrictUploadsToLocalDownloadPath` blocks uploads from outside the mirror.
+- **Per-operation progress** - determinate per-file progress notifications with cancel, plus global pause/resume/stop for all transfers.
+- **Parallel transfers** (`maxConnections`) - a per-profile connection pool so uploads, downloads, syncs, and folder walks genuinely run in parallel.
 
 ### Inherited from vscode-sftp
 
@@ -38,23 +38,23 @@ The upstream extension is a great sync tool, but it stops short of a full folder
 
 ## Roadmap
 
-- **Password security in config** — move stored passwords out of plaintext `.vscode/sftp.json` into VS Code's `SecretStorage`, with a migration path for existing configs.
-- **Custom location for the SFTP config file** — point the extension at an `sftp.json` outside the default `.vscode/` folder.
-- **Configurable download location** — a per-profile download destination so explicit downloads can land outside the working `context` folder.
+- **Password security in config** - move stored passwords out of plaintext `.vscode/sftp.json` into VS Code's `SecretStorage`, with a migration path for existing configs.
+- **Custom location for the SFTP config file** - point the extension at an `sftp.json` outside the default `.vscode/` folder.
+- **Configurable download location** - a per-profile download destination so explicit downloads can land outside the working `context` folder.
 - Remaining Staged Transfer Workflow phases.
 
 ## Installation
 
 Install **SFTP Workbench** from the VS Code Marketplace (extension id: `heuristics-io.sftp-workbench`).
 
-> ⚠️ **Before installing:** disable or uninstall any other vscode-sftp variant (`liximomo.sftp`, `Natizyskunk.sftp`, or other forks). They register the same `sftp.*` commands, views, and settings — running two at once will make commands collide.
+> ⚠️ **Before installing:** disable or uninstall any other vscode-sftp variant (`liximomo.sftp`, `Natizyskunk.sftp`, or other forks). They register the same `sftp.*` commands, views, and settings - running two at once will make commands collide.
 
 1. Select Extensions (Ctrl + Shift + X).
 2. Disable/uninstall any other SFTP extension variants.
 3. Search for `SFTP Workbench` and install.
 4. Voilà!
 
-Your existing `.vscode/sftp.json` keeps working unchanged — the configuration format, command ids, and settings are fully compatible with vscode-sftp.
+Your existing `.vscode/sftp.json` keeps working unchanged - the configuration format, command ids, and settings are fully compatible with vscode-sftp.
 
 ## Documentation
 
@@ -261,10 +261,10 @@ In sftp.json:
 
 Compare a local folder with its remote counterpart and see, per file, what differs:
 
-- **Modified** — exists on both sides but the content differs (size differs, or same size with a differing modification time).
-- **Timestamp Only** — identical size but the modification time differs. On FTP this is skipped (LIST mtimes are unreliable), so the group only appears for SFTP.
-- **New Remote** — exists only on the remote.
-- **New Local** — exists only locally.
+- **Modified** - exists on both sides but the content differs (size differs, or same size with a differing modification time).
+- **Timestamp Only** - identical size but the modification time differs. On FTP this is skipped (LIST mtimes are unreliable), so the group only appears for SFTP.
+- **New Remote** - exists only on the remote.
+- **New Local** - exists only locally.
 
 How to use it:
 
@@ -296,10 +296,10 @@ Right-click a **group header** to act on every file in that category at once. Th
 
 | Group | Actions |
 | --- | --- |
-| **Modified** | **Download from Remote** / **Upload to Remote** — overwrite one side with the other (confirm; cannot be undone). |
-| **Timestamp Only** | **Match Timestamp (Use Remote)** / **Match Timestamp (Use Local)** — align mtimes without transferring content (no confirm). |
-| **New Remote** | **Download from Remote** — pull all remote-only files locally. **Delete on Remote** — remove them from the server (confirm). |
-| **New Local** | **Upload to Remote** — push all local-only files. **Delete Locally** — remove them from disk (confirm). |
+| **Modified** | **Download from Remote** / **Upload to Remote** - overwrite one side with the other (confirm; cannot be undone). |
+| **Timestamp Only** | **Match Timestamp (Use Remote)** / **Match Timestamp (Use Local)** - align mtimes without transferring content (no confirm). |
+| **New Remote** | **Download from Remote** - pull all remote-only files locally. **Delete on Remote** - remove them from the server (confirm). |
+| **New Local** | **Upload to Remote** - push all local-only files. **Delete Locally** - remove them from disk (confirm). |
 
 Files are processed sequentially (FTP serializes on a single control connection), then the comparison refreshes once.
 
@@ -346,5 +346,5 @@ You can see all the Frequently Asked Questions [here](./FAQ.md).
 
 SFTP Workbench takes no donations. If this extension saves you time, please support the people who built the foundation:
 
-- **Natizyskunk** — [Buy Me a Coffee](https://www.buymeacoffee.com/Natizyskunk) · [PayPal](https://www.paypal.com/donate?business=DELD7APHHM3BC&no_recurring=0&currency_code=EUR) · [PayPal.me](https://paypal.me/natanfourie)
-- **liximomo** — original author of [vscode-sftp](https://github.com/liximomo/vscode-sftp)
+- **Natizyskunk** - [Buy Me a Coffee](https://www.buymeacoffee.com/Natizyskunk) · [PayPal](https://www.paypal.com/donate?business=DELD7APHHM3BC&no_recurring=0&currency_code=EUR) · [PayPal.me](https://paypal.me/natanfourie)
+- **liximomo** - original author of [vscode-sftp](https://github.com/liximomo/vscode-sftp)

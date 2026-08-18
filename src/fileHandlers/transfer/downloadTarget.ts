@@ -100,13 +100,13 @@ export function resolveEffectiveTarget(
   };
 
   if (isPathUnder(base, ctx.target.localFsPath)) {
-    // local side is literal — UResource.from derives remote via toRemotePath
+    // local side is literal - UResource.from derives remote via toRemotePath
     // against the mirror base, i.e. exactly the inverse mapping
     return UResource.from(Uri.file(ctx.target.localFsPath), resourceConfig);
   }
 
   if (direction === TransferDirection.REMOTE_TO_LOCAL) {
-    // remote side is literal — UResource.from derives local via toLocalPath
+    // remote side is literal - UResource.from derives local via toLocalPath
     // against the mirror base, i.e. exactly the forward mapping
     return UResource.from(ctx.target.remoteUri, resourceConfig);
   }

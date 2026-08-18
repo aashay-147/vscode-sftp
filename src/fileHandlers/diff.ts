@@ -9,7 +9,7 @@ import { resolveEffectiveTarget } from './transfer/downloadTarget';
 export const diff = createFileHandler({
   name: 'diff',
   async handle() {
-    // Feature 9: inverse remap only — LOCAL_TO_REMOTE keeps the local side
+    // Feature 9: inverse remap only - LOCAL_TO_REMOTE keeps the local side
     // literal, so a mirror file diffs against its true remote counterpart and
     // everything else is untouched. diff has no implicit callers, so the flag
     // is applied unconditionally here.

@@ -2,7 +2,7 @@
 // Remote-Explorer multi-select and Upload Changed Files. Groups the selection
 // by FileService and, per service, classifies every file up front so ONE
 // counts modal covers the whole batch (flags are per-profile, so a merged
-// cross-service modal would misreport — one modal per service, sequential).
+// cross-service modal would misreport - one modal per service, sequential).
 // Selected folders are not aggregated: each runs its own staged flow,
 // sequentially, through the ordinary folder handlers.
 
@@ -46,7 +46,7 @@ async function lstatOrNull(fileSystem: FileSystem, fsPath: string): Promise<File
 // Determinate progress over a concurrent per-file handler fan-out (Feature 5).
 // Each job is a full single-file handler call with its own one-task scheduler,
 // so unlike a folder transfer there is no shared queue: Cancel falls back to
-// the service-wide stop, and Pause has nothing queued to hold — an accepted
+// the service-wide stop, and Pause has nothing queued to hold - an accepted
 // limitation of the multi-select path.
 async function runBatchWithProgress(
   title: string,
@@ -107,7 +107,7 @@ export async function transferSelectedFiles(
       continue;
     }
     // Feature 9: remap at context-build time so classification and dispatch
-    // agree on the same local/remote pair (the handler remaps again — idempotent)
+    // agree on the same local/remote pair (the handler remaps again - idempotent)
     ctx.target = resolveEffectiveTarget(ctx, baseOption, direction);
     const list = byService.get(ctx.fileService) || [];
     list.push(ctx);
@@ -121,7 +121,7 @@ export async function transferSelectedFiles(
     const skipUnmodified = Boolean(config.skipUnmodified);
 
     if (!confirmOverwrite && !skipUnmodified) {
-      // flags off: today's plain concurrent per-uri fan-out, byte-for-byte —
+      // flags off: today's plain concurrent per-uri fan-out, byte-for-byte -
       // now with a batch counter over the settled handler calls
       await runBatchWithProgress(
         `SFTP: ${fromLocal ? 'Uploading' : 'Downloading'} selected files`,
@@ -193,7 +193,7 @@ export async function transferSelectedFiles(
     }
 
     // each selected folder runs its own staged flow (walk + modal via the
-    // ordinary handler), sequentially — no merged cross-folder plan
+    // ordinary handler), sequentially - no merged cross-folder plan
     for (const ctx of folders) {
       try {
         await handler(ctx, baseOption);
@@ -231,7 +231,7 @@ async function transferClassifiedFiles(
       if (file.bothPresent) {
         identical.push(file.srcFsPath);
       } else {
-        // missing on both sides — let the transfer surface the real error
+        // missing on both sides - let the transfer surface the real error
         counts.create += 1;
       }
       continue;

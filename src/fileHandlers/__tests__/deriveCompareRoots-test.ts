@@ -1,4 +1,4 @@
-// Feature 9 — deriveCompareRoots: which local/remote pair a folder compare
+// Feature 9 - deriveCompareRoots: which local/remote pair a folder compare
 // walks under the mirror semantics (clicked side literal, other side derived).
 
 jest.mock('vscode', () => {
@@ -17,7 +17,7 @@ jest.mock('../../app', () => ({
 }));
 jest.mock('../createFileHandler', () => ({
   __esModule: true,
-  // compare.ts calls createFileHandler() at module load — return an inert handler
+  // compare.ts calls createFileHandler() at module load - return an inert handler
   default: () => jest.fn(async () => undefined),
   handleCtxFromUri: jest.fn(),
 }));
@@ -57,7 +57,7 @@ describe('deriveCompareRoots', () => {
       derive({
         localDownloadPath: '_downloads',
         localFsPath: path.join(MIRROR, 'src'),
-        // workspace-mapped remote would be /var/www/_downloads/src — discarded
+        // workspace-mapped remote would be /var/www/_downloads/src - discarded
         remoteFsPath: '/var/www/_downloads/src',
       })
     ).toEqual({ localRoot: path.join(MIRROR, 'src'), remoteRoot: '/var/www/src' });

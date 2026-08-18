@@ -5,7 +5,7 @@
 //
 // The guard is advisory, not transactional: files added or changed between the
 // staging walk and the transfer re-walk move unconfirmed and uncounted, and an
-// identical-classified file that changed in that window is wrongly skipped —
+// identical-classified file that changed in that window is wrongly skipped -
 // the same TOCTOU stance as the single-file gate.
 
 import * as path from 'path';
@@ -23,7 +23,7 @@ import { FileHandleOption } from '../option';
 import { StagePlan, stageFolderTransfer } from './stage';
 
 // Thrown when the user picks Cancel in a multi-profile staged flow, meaning
-// "cancel the remaining profiles too" — createFileMultiCommand catches it to
+// "cancel the remaining profiles too" - createFileMultiCommand catches it to
 // stop the per-profile loop without reporting an error.
 export class StagedTransferCancelledError extends Error {
   constructor() {
@@ -69,7 +69,7 @@ function describeCounts(
 }
 
 // Decide what happens to a staged transfer: passive fast path, counts modal
-// (Transfer / Review / Cancel — or the multi-profile variant), or silent
+// (Transfer / Review / Cancel - or the multi-profile variant), or silent
 // proceed when only skipUnmodified is on. The caller owns applying the
 // decision (setting _overwriteConfirmed/_skipSet or aborting).
 export async function confirmStagePlan(args: {
@@ -78,7 +78,7 @@ export async function confirmStagePlan(args: {
   confirmOverwrite: boolean;
   skipUnmodified: boolean;
   compareMtime: boolean;
-  // e.g. "'src'" or "3 selected files" — already quoted/pluralized by the caller
+  // e.g. "'src'" or "3 selected files" - already quoted/pluralized by the caller
   sourceLabel: string;
   // where the transfer lands, e.g. host:/var/www/src
   destinationLabel: string;
@@ -97,7 +97,7 @@ export async function confirmStagePlan(args: {
   });
 
   if (!confirmOverwrite) {
-    // skipUnmodified alone stages silently — no modal, no toast
+    // skipUnmodified alone stages silently - no modal, no toast
     return proceed();
   }
 
@@ -108,9 +108,9 @@ export async function confirmStagePlan(args: {
   const overwrites = overwriteModified + overwriteTimeDiff;
   const summary = describeCounts(plan, skipUnmodified, compareMtime, reTransferVerb);
 
-  // Zero-overwrite fast path — only when the transfer genuinely overwrites
+  // Zero-overwrite fast path - only when the transfer genuinely overwrites
   // nothing: no overwrite entries AND no identical files about to be silently
-  // re-transferred (identical files DO transfer when skipUnmodified is off —
+  // re-transferred (identical files DO transfer when skipUnmodified is off -
   // and on FTP "identical" is size-only, so that would be a data-loss path).
   if (overwrites === 0 && (skipUnmodified || identical === 0)) {
     showInformationMessage(`${verb} ${args.sourceLabel}: ${summary} Nothing overwritten.`);
@@ -143,7 +143,7 @@ export async function confirmStagePlan(args: {
     // user acts through the per-item/group actions (whose call sites already
     // suppress re-prompting) and resets with Clear. Identical pairs are not
     // representable as CompareEntry, so they never appear in Review and
-    // Review-then-group-actions never re-transfers them — intended: Review
+    // Review-then-group-actions never re-transfers them - intended: Review
     // means "inspect and act on differences", modal-Transfer means "force this
     // exact state".
     app.compareExplorer.setResult(plan.result);
@@ -194,7 +194,7 @@ export async function stageAndConfirmFolderTransfer(
     }
   );
   if (!plan) {
-    // walk cancelled — discard the partial plan, transfer nothing
+    // walk cancelled - discard the partial plan, transfer nothing
     return { action: 'abort' };
   }
 

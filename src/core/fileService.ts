@@ -48,7 +48,7 @@ interface ServiceOption {
   confirmOverwrite: boolean | 'confirm';
   skipUnmodified: boolean;
   // Feature 9: local mirror for explicit transfers. Stays RAW here (as typed in
-  // config) — resolution against baseDir is centralized in
+  // config) - resolution against baseDir is centralized in
   // helper/paths.resolveLocalDownloadPathBase.
   localDownloadPath?: string;
   restrictUploadsToLocalDownloadPath?: boolean;
@@ -178,7 +178,7 @@ function getHostInfo(config) {
     'downloadOnOpen',
     'confirmOverwrite',
     'skipUnmodified',
-    // mirror settings must not enter the connect-option hash — two profiles
+    // mirror settings must not enter the connect-option hash - two profiles
     // differing only in them must share one connection pool
     'localDownloadPath',
     'restrictUploadsToLocalDownloadPath',
@@ -186,7 +186,7 @@ function getHostInfo(config) {
     'ignoreFile',
     'watcher',
     'concurrency',
-    // pool size must not enter the connect-option hash — a profile switch that
+    // pool size must not enter the connect-option hash - a profile switch that
     // only changes maxConnections would otherwise create a second live
     // connection set to the same host (see remoteFs fsTable)
     'maxConnections',
@@ -547,7 +547,7 @@ export default class FileService {
         // un-pause so any in-flight tasks drain through to idle...
         scheduler.start();
         // ...and if nothing is in flight (paused queue, tasks all finished),
-        // no completion event will ever fire — finish the run directly.
+        // no completion event will ever fire - finish the run directly.
         if (scheduler.pendingCount <= 0 && finishRun) {
           finishRun();
         }
@@ -670,7 +670,7 @@ export default class FileService {
     if (serviceConfig.protocol === 'ftp') {
       serviceConfig.concurrency = 1;
       // FTP serializes every command on one control connection (p-queue with
-      // concurrency 1 in ftpFileSystem) — extra connections buy nothing
+      // concurrency 1 in ftpFileSystem) - extra connections buy nothing
       serviceConfig.maxConnections = 1;
     }
     serviceConfig.ignore = this._createIgnoreFn(fileServiceConfig);

@@ -2,7 +2,7 @@
   "name": "sftp-workbench",
   "displayName": "SFTP Workbench",
   "description": "Dreamweaver-style SFTP/FTP workflow for VS Code: folder compare with click-to-diff, staged transfers, parallel connections, remote explorer. Built on vscode-sftp by liximomo & Natizyskunk.",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "publisher": "heuristics-io",
   "author": "Aashay Tattu <aashay.sftp@heuristics.io>",
   "engines": {

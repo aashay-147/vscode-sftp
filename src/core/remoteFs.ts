@@ -141,8 +141,8 @@ interface PooledFileHandle {
 }
 
 // Feature 4: a pool of KeepAliveRemoteFs connections to one host (one fsTable
-// entry). Grows lazily — starts with a single connection and only opens
-// another when every existing one is busy and the cap allows it — so a config
+// entry). Grows lazily - starts with a single connection and only opens
+// another when every existing one is busy and the cap allows it - so a config
 // with maxConnections > 1 but light usage behaves exactly like today. With an
 // effective pool size of 1 the raw RemoteFileSystem is handed out directly,
 // keeping the default path byte-identical to the pre-pool behavior.
@@ -188,7 +188,7 @@ class PooledRemoteFs {
   }
 
   // least-busy member, opening a new connection when all are busy and the cap
-  // allows — the lazy-growth policy
+  // allows - the lazy-growth policy
   _pick(): PoolMember {
     let best = this.members[0];
     for (const member of this.members) {
@@ -209,7 +209,7 @@ class PooledRemoteFs {
   _fsOf(member: PoolMember): Promise<RemoteFileSystem> {
     return member.keepAlive.getFs(this.option).catch(err => {
       // a failed connect may mean a cached answer went stale (changed
-      // password, one-time code) — drop the cache so the next attempt prompts
+      // password, one-time code) - drop the cache so the next attempt prompts
       this._passwordCache.clear();
       throw err;
     });
@@ -305,7 +305,7 @@ class PooledFileSystem extends FileSystem {
       throw error;
     }
 
-    // the call resolves as soon as the stream exists — keep the busy slot
+    // the call resolves as soon as the stream exists - keep the busy slot
     // held until the data actually finishes flowing
     let released = false;
     const release = () => {

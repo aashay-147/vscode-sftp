@@ -26,7 +26,7 @@ export function compareNodeTarget(node: CompareNode): CompareNodeTarget | undefi
       isDirectory: true,
       status: node.status,
       relPath: node.relDir,
-      // folder nodes carry no id of their own — every entry beneath them
+      // folder nodes carry no id of their own - every entry beneath them
       // belongs to the same walk, so the first one's service is the folder's
       serviceId: node.entries.length > 0 ? node.entries[0].serviceId : undefined,
     };

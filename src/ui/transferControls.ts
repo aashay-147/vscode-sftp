@@ -1,8 +1,8 @@
 // Global pause/resume control for scheduler-driven transfers (Feature 5).
 // A status-bar toggle appears while at least one progress-tracked operation
 // (sync / folder / multi-file transfer) is running: click to pause, click
-// again to resume. State is global — pausing pauses every running operation —
-// and each operation's progress notification mirrors it ("Paused — 12/40").
+// again to resume. State is global - pausing pauses every running operation -
+// and each operation's progress notification mirrors it ("Paused - 12/40").
 // `sftp.cancelAllTransfer` remains the global stop.
 
 import * as vscode from 'vscode';
@@ -45,9 +45,9 @@ export function progressCounts(op: TransferOperation): string {
 export function progressMessage(op: TransferOperation, detail?: string): string {
   const counts = progressCounts(op);
   if (paused) {
-    return `Paused — ${counts}`;
+    return `Paused - ${counts}`;
   }
-  return detail ? `${counts} — ${detail}` : counts;
+  return detail ? `${counts} - ${detail}` : counts;
 }
 
 function render() {
@@ -59,8 +59,8 @@ function render() {
 
   const { done, total } = totals();
   if (paused) {
-    item.text = `$(debug-start) SFTP: Paused — ${done}/${total}`;
-    item.tooltip = 'Transfers paused — click to resume';
+    item.text = `$(debug-start) SFTP: Paused - ${done}/${total}`;
+    item.tooltip = 'Transfers paused - click to resume';
     item.command = COMMAND_TRANSFER_RESUME;
   } else {
     item.text = `$(debug-pause) SFTP ${done}/${total}`;
@@ -82,7 +82,7 @@ export function operationProgressed() {
 export function operationEnded(op: TransferOperation) {
   activeOperations.delete(op);
   if (activeOperations.size === 0) {
-    // nothing left to resume — don't leak the paused state into the next run
+    // nothing left to resume - don't leak the paused state into the next run
     paused = false;
   }
   render();

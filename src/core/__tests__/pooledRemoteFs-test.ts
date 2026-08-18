@@ -1,4 +1,4 @@
-// Feature 4 — PooledRemoteFs: pool size 1 hands out the raw fs (byte-identical
+// Feature 4 - PooledRemoteFs: pool size 1 hands out the raw fs (byte-identical
 // default), the pool grows lazily and only under load, never past its cap,
 // fd-based calls route back to the connection that opened the handle, disposal
 // ends every member, and interactive passwords are asked once per pool.
@@ -73,7 +73,7 @@ const setConnectHook: (fn: any) => void = fsModule.__setConnectHook;
 
 const promptMock = promptForPassword as jest.Mock;
 
-// unique host per test — the module-level fsTable persists across tests
+// unique host per test - the module-level fsTable persists across tests
 let hostId = 0;
 function makeOption(overrides: object = {}) {
   hostId += 1;
@@ -105,7 +105,7 @@ describe('PooledRemoteFs (Feature 4)', () => {
     promptMock.mockImplementation(async () => 'secret');
   });
 
-  test('pool size 1 returns the raw remote fs — no facade in the default path', async () => {
+  test('pool size 1 returns the raw remote fs - no facade in the default path', async () => {
     const option = makeOption();
     const fs = await createRemoteIfNoneExist(option, 1);
     expect(instances.length).toBe(1);
@@ -131,13 +131,13 @@ describe('PooledRemoteFs (Feature 4)', () => {
     const fs = await createRemoteIfNoneExist(option, 3);
 
     const pending = ['/1', '/2', '/3', '/4', '/5'].map(dir => fs.list(dir));
-    // 5 concurrent list calls, cap 3 — exactly 3 connections
+    // 5 concurrent list calls, cap 3 - exactly 3 connections
     expect(instances.length).toBe(3);
 
     await drainLists();
     await Promise.all(pending);
 
-    // load is gone — later sequential work reuses existing members
+    // load is gone - later sequential work reuses existing members
     await fs.lstat('/after');
     expect(instances.length).toBe(3);
   });
@@ -190,7 +190,7 @@ describe('PooledRemoteFs (Feature 4)', () => {
     await drainLists();
     await Promise.all(pending);
 
-    // members 2 and 3 connected with the cached answer — no extra prompts
+    // members 2 and 3 connected with the cached answer - no extra prompts
     expect(promptMock).toHaveBeenCalledTimes(1);
     instances.forEach(instance => expect(instance.connectConfig).toBeDefined());
   });
@@ -202,7 +202,7 @@ describe('resolvePoolSize (Feature 4)', () => {
     expect(resolvePoolSize({ protocol: 'sftp', concurrency: 4 })).toBe(1);
   });
 
-  test('capped by concurrency — more connections than workers is waste', () => {
+  test('capped by concurrency - more connections than workers is waste', () => {
     expect(
       resolvePoolSize({ protocol: 'sftp', maxConnections: 8, concurrency: 4 })
     ).toBe(4);

@@ -14,7 +14,7 @@ import {
 function createTransferHandle(direction: TransferDirection) {
   return async function handle(this: FileHandlerContext, option) {
     // Feature 9: remap through the local mirror BEFORE anything reads the
-    // target — the staged pre-flight, transferConfig, progress and afterHandle
+    // target - the staged pre-flight, transferConfig, progress and afterHandle
     // all consume this.target, so one reassignment keeps them consistent.
     // Structural no-op unless the call site flags useLocalDownloadPath and
     // localDownloadPath is configured.

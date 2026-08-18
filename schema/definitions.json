@@ -76,7 +76,7 @@
       },
       "restrictUploadsToLocalDownloadPath": {
         "type": "boolean",
-        "description": "When true (and `localDownloadPath` is set), explicit uploads and local-to-remote sync of files OUTSIDE the mirror folder are blocked with a warning — a safety fence so only files downloaded into the mirror can go back up. Inert without `localDownloadPath`. Does not affect uploadOnSave or the watcher.",
+        "description": "When true (and `localDownloadPath` is set), explicit uploads and local-to-remote sync of files OUTSIDE the mirror folder are blocked with a warning - a safety fence so only files downloaded into the mirror can go back up. Inert without `localDownloadPath`. Does not affect uploadOnSave or the watcher.",
         "default": false
       },
       "confirmOverwrite": {
@@ -86,7 +86,7 @@
       },
       "skipUnmodified": {
         "type": "boolean",
-        "description": "Skip files that are already identical on the destination (same size + mtime basis as Sync and Folder Compare; size-only on FTP) during explicit folder/project/multi-file upload/download. Single-file commands, Sync and Force are unaffected. Note: on large trees this runs a full recursive listing of both sides before transferring — on FTP that listing is serial and can be slow.",
+        "description": "Skip files that are already identical on the destination (same size + mtime basis as Sync and Folder Compare; size-only on FTP) during explicit folder/project/multi-file upload/download. Single-file commands, Sync and Force are unaffected. Note: on large trees this runs a full recursive listing of both sides before transferring - on FTP that listing is serial and can be slow.",
         "default": false
       },
       "syncOption": {

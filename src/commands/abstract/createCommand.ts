@@ -31,7 +31,7 @@ interface FileCommandOption extends BaseCommandOption {
   handleFile: (ctx: FileHandlerContext) => Promise<unknown>;
   getFileTarget: (...args: any[]) => undefined | Uri | Uri[] | Promise<undefined | Uri | Uri[]>;
   // Optional multi-select hook: when the command receives more than one target
-  // it takes over the whole selection (aggregated staging — one counts modal
+  // it takes over the whole selection (aggregated staging - one counts modal
   // per service instead of a per-uri fan-out). Commands without it keep the
   // per-uri fan-out below.
   handleMulti?: (uris: Uri[]) => Promise<unknown>;
@@ -134,7 +134,7 @@ export function createFileMultiCommand(commandOption: FileCommandOption & { name
       const run = async (uri: Uri) => {
         try {
           const ctxs = allHandleCtxFromUri(uri);
-          // One profile at a time when any profile could prompt — a concurrent
+          // One profile at a time when any profile could prompt - a concurrent
           // fan-out races several modals for different destinations.
           if (ctxs.some(ctx => Boolean(ctx.config.confirmOverwrite))) {
             for (const ctx of ctxs) {
@@ -145,7 +145,7 @@ export function createFileMultiCommand(commandOption: FileCommandOption & { name
           }
         } catch (error) {
           if (error instanceof StagedTransferCancelledError) {
-            // user chose Cancel in a staged multi-profile modal — stop the
+            // user chose Cancel in a staged multi-profile modal - stop the
             // remaining profiles for this target quietly
             return;
           }

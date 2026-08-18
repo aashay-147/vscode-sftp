@@ -1,4 +1,4 @@
-// Features 2+3 — the staged folder flow end to end through the real handler
+// Features 2+3 - the staged folder flow end to end through the real handler
 // (createTransferHandle → stageAndConfirmFolderTransfer → transfer):
 // counts modal, corrected zero-overwrite fast path, Review handoff, _skipSet
 // selection, walk cancellation, the multi-profile modal variant, and the
@@ -202,8 +202,8 @@ describe('staged folder transfer (Features 2+3)', () => {
     expect(tasks.length).toBe(0);
   });
 
-  test('zero-overwrite fast path: creates only — no modal, passive toast, proceeds', async () => {
-    // no local side at all — the destination folder doesn't exist yet
+  test('zero-overwrite fast path: creates only - no modal, passive toast, proceeds', async () => {
+    // no local side at all - the destination folder doesn't exist yet
     fillFs({
       remote: { folder: { newr: file('new remote') } },
     });
@@ -227,7 +227,7 @@ describe('staged folder transfer (Features 2+3)', () => {
     await download(ctx);
 
     // the identical file would be silently re-transferred (data-loss path on
-    // FTP) — the modal must appear even though nothing is classified overwrite
+    // FTP) - the modal must appear even though nothing is classified overwrite
     expect(modalChoices).toHaveBeenCalledTimes(1);
     expect(modalChoices.mock.calls[0][1]).toBe('Download'); // no overwrites in label
     expect(tasks.length).toBe(1);
@@ -243,13 +243,13 @@ describe('staged folder transfer (Features 2+3)', () => {
 
     expect(progress).not.toHaveBeenCalled();
     expect(modalChoices).not.toHaveBeenCalled();
-    // every stat/list touches the SOURCE side only — the destination is never
+    // every stat/list touches the SOURCE side only - the destination is never
     // probed (localFs.list lstats its own entries internally; that's the
     // pre-existing walk, not an extra call)
     const lstatPaths = lstatSpy.mock.calls.map(c => c[0]);
     lstatPaths.forEach(p => expect(p).toMatch(/^\/remote/));
     listSpy.mock.calls.forEach(c => expect(c[0]).toMatch(/^\/remote/));
-    // and the source root is stat-ed exactly once (transfer()'s own) — no
+    // and the source root is stat-ed exactly once (transfer()'s own) - no
     // staging probe ran
     expect(lstatPaths.filter(p => p === '/remote/folder').length).toBe(1);
     expect(tasks.length).toBe(3);

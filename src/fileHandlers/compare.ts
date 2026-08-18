@@ -27,7 +27,7 @@ export enum CompareStatus {
   NewLocal = 'newLocal',
   NewRemote = 'newRemote',
   Modified = 'modified',
-  // same size, different mtime — optimistically treated as timestamp-only.
+  // same size, different mtime - optimistically treated as timestamp-only.
   // an in-place same-length content edit would also land here; the diff action
   // stays available on these entries so the user can verify.
   TimeDiff = 'timeDiff',
@@ -79,14 +79,14 @@ export function deriveCompareRoots(args: {
     return { localRoot: target.localFsPath, remoteRoot: target.remoteFsPath };
   }
   if (isPathUnder(base, target.localFsPath)) {
-    // the local side lives in the mirror — remote root is its inverse mapping
+    // the local side lives in the mirror - remote root is its inverse mapping
     return {
       localRoot: target.localFsPath,
       remoteRoot: toRemotePath(target.localFsPath, base, config.remotePath),
     };
   }
   if (remoteOrigin) {
-    // clicked the remote side — the local root is the forward-mapped mirror path
+    // clicked the remote side - the local root is the forward-mapped mirror path
     return {
       localRoot: toLocalPath(target.remoteFsPath, config.remotePath, base),
       remoteRoot: target.remoteFsPath,
@@ -104,13 +104,13 @@ export function deriveCompareRoots(args: {
 // remote mtimes arrive already offset-adjusted from the remote fs layer,
 // so remoteTimeOffsetInHours must not be re-applied here.
 //
-// compareMtime is false for FTP: LIST timestamps are unreliable — minute
+// compareMtime is false for FTP: LIST timestamps are unreliable - minute
 // granularity, and the `ftp` lib parses the server's wall-clock with a
 // process-local-timezone Date ctor, so byte-identical files routinely differ
 // by a whole-hour TZ skew and/or dropped sub-minute seconds. Rather than
 // surface that noise as TimeDiff, FTP classifies on size ALONE; same-size
 // files are treated as unchanged. (A same-length in-place edit is therefore
-// not detected over FTP — the price of not trusting FTP mtimes. Trigger a
+// not detected over FTP - the price of not trusting FTP mtimes. Trigger a
 // content diff explicitly to confirm such a file.)
 export function diffStatus(a: FileStats, b: FileStats, compareMtime: boolean): CompareStatus | null {
   if (a.size !== b.size) {
@@ -122,7 +122,7 @@ export function diffStatus(a: FileStats, b: FileStats, compareMtime: boolean): C
   return null;
 }
 
-// FTP LIST mtimes can't be trusted (see diffStatus) — compare on size only.
+// FTP LIST mtimes can't be trusted (see diffStatus) - compare on size only.
 export function deriveCompareMtime(config: { protocol?: string }): boolean {
   return config.protocol !== 'ftp';
 }
@@ -162,7 +162,7 @@ async function lstatOrNull(fileSystem: FileSystem, fsPath: string): Promise<File
   try {
     return await fileSystem.lstat(fsPath);
   } catch (error) {
-    // absent on this side — the other side (if present) is "new" here
+    // absent on this side - the other side (if present) is "new" here
     return null;
   }
 }
@@ -185,7 +185,7 @@ export async function classifyFile(
 // Bounds concurrent list() calls during a walk (Feature 4). The recursive walk
 // otherwise fires one list() per directory all at once, which floods a pooled
 // connection set and starves transfers sharing it. Held only around the
-// directory read itself — released before recursing — so deep trees can't
+// directory read itself - released before recursing - so deep trees can't
 // deadlock on the limit.
 export class WalkLimit {
   private available: number;
@@ -242,7 +242,7 @@ export async function collectFiles(
   try {
     fileEntries = await fileSystem.list(dir);
   } catch (error) {
-    // the folder may not exist on this side — every file on the other side is "new"
+    // the folder may not exist on this side - every file on the other side is "new"
     return;
   } finally {
     if (limit) {
@@ -310,7 +310,7 @@ export const compareFolders = createFileHandler<FileHandleOption>({
             report(`${seen} files checked`);
           },
         };
-        // each side gets its own limit — the local walk must not queue behind
+        // each side gets its own limit - the local walk must not queue behind
         // slow remote directory reads (Feature 4)
         await Promise.all([
           collectFiles(localFs, localRoot, localRoot, option.ignore, localFiles, {
@@ -326,7 +326,7 @@ export const compareFolders = createFileHandler<FileHandleOption>({
       }
     );
     if (cancelled) {
-      // partial walk — keep whatever result is currently shown
+      // partial walk - keep whatever result is currently shown
       return;
     }
 
@@ -379,7 +379,7 @@ export const compareFolders = createFileHandler<FileHandleOption>({
 });
 
 // Classify an explicit set of selected files (not a folder walk) and load just
-// those into the compare view. Aggregates ALL uris into ONE setResult — a
+// those into the compare view. Aggregates ALL uris into ONE setResult - a
 // createFileCommand's per-uri fan-out would clobber every file but the last.
 // Groups by fileService so a multi-root/multi-profile selection still works;
 // files outside any config are reported and skipped, not fatal to the batch.
@@ -390,11 +390,11 @@ export async function compareFiles(uris: Uri[]): Promise<void> {
     try {
       ctx = handleCtxFromUri(uri);
     } catch (error) {
-      // selected file isn't under any configured context — skip it
+      // selected file isn't under any configured context - skip it
       reportError(error);
       continue;
     }
-    // Feature 9: inverse remap only (local side literal) — a selected mirror
+    // Feature 9: inverse remap only (local side literal) - a selected mirror
     // file compares against its true remote counterpart, fixing the relPath
     // derivation below; a no-op for everything else
     ctx.target = resolveEffectiveTarget(

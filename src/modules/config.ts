@@ -84,7 +84,7 @@ const defaultConfig = {
   useTempFile: false,
   openSsh: false,
   downloadOnOpen: false,
-  // localDownloadPath has no default — unset means "no mirror"
+  // localDownloadPath has no default - unset means "no mirror"
   restrictUploadsToLocalDownloadPath: false,
   confirmOverwrite: false,
   skipUnmodified: false,

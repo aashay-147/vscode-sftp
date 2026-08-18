@@ -1,4 +1,4 @@
-// Feature 2 — the call-site override mechanism (plan test 6) and the
+// Feature 2 - the call-site override mechanism (plan test 6) and the
 // notifyIgnored toast gate. Force and compare-view commands rely on
 // `Object.assign(invokeOption, option)` giving a call-site
 // `confirmOverwrite: false` priority over the config-derived transformOption

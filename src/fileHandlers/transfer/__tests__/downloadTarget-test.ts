@@ -1,4 +1,4 @@
-// Feature 9 — localDownloadPath mapping module. Covers base resolution,
+// Feature 9 - localDownloadPath mapping module. Covers base resolution,
 // boundary-safe containment, the inverse mapping, and resolveEffectiveTarget's
 // direction × under-base matrix (including the no-flag/no-base structural
 // no-ops and idempotency).

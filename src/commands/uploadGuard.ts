@@ -1,5 +1,5 @@
 // Command-layer enforcement of `restrictUploadsToLocalDownloadPath`
-// (Feature 9). Only explicit upload/sync commands call these — the transfer
+// (Feature 9). Only explicit upload/sync commands call these - the transfer
 // layer is untouched, so internal callers (uploadOnSave, watcher) are
 // unaffected by design. The predicate itself lives in
 // fileHandlers/transfer/downloadTarget.ts.
@@ -23,13 +23,13 @@ export function ensureUploadAllowed(ctx: FileHandlerContext): boolean {
   showWarningMessage(
     `'${ctx.target.localFsPath}' is outside localDownloadPath (${getDownloadPathBase(
       ctx
-    )}) — upload blocked by restrictUploadsToLocalDownloadPath`
+    )}) - upload blocked by restrictUploadsToLocalDownloadPath`
   );
   return false;
 }
 
 // Compare-group variant: drop blocked entries with ONE aggregate warning.
-// Entries whose context can't be resolved pass through — the action itself
+// Entries whose context can't be resolved pass through - the action itself
 // reports the real error.
 export function filterUploadableCompareEntries<
   T extends { localFsPath: string; remoteFsPath: string; serviceId?: number }
@@ -42,21 +42,21 @@ export function filterUploadableCompareEntries<
         return false;
       }
     } catch (error) {
-      // unresolvable entry — let the action surface the real error
+      // unresolvable entry - let the action surface the real error
     }
     return true;
   });
 
   if (blockedCount > 0) {
     showWarningMessage(
-      `${blockedCount} file(s) outside localDownloadPath — upload blocked by restrictUploadsToLocalDownloadPath`
+      `${blockedCount} file(s) outside localDownloadPath - upload blocked by restrictUploadsToLocalDownloadPath`
     );
   }
   return allowed;
 }
 
 // Multi-select variant: drop the blocked uris and show ONE aggregate warning.
-// Uris that don't resolve to a config pass through — the transfer path reports
+// Uris that don't resolve to a config pass through - the transfer path reports
 // those with its own error.
 export function filterUploadableUris(uris: Uri[]): Uri[] {
   const allowed: Uri[] = [];
@@ -78,7 +78,7 @@ export function filterUploadableUris(uris: Uri[]): Uri[] {
 
   if (blocked.length > 0) {
     showWarningMessage(
-      `${blocked.length} file(s) outside localDownloadPath — upload blocked by restrictUploadsToLocalDownloadPath`
+      `${blocked.length} file(s) outside localDownloadPath - upload blocked by restrictUploadsToLocalDownloadPath`
     );
   }
   return allowed;

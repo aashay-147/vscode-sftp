@@ -96,7 +96,7 @@ async function handleCommand(hint: any) {
   // confirmOverwrite is on, silent skip-identical when skipUnmodified is on,
   // today's plain fan-out when both are off. Files outside any config are
   // reported and skipped inside transferSelectedFiles. Renames and deletes
-  // below are separate operations, not overwrites — they run regardless of the
+  // below are separate operations, not overwrites - they run regardless of the
   // upload decision.
   const uploadUris = filterUploadableUris(creates.concat(uploads).map(change => change.uri));
   if (uploadUris.length > 0) {

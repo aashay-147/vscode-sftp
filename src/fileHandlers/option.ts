@@ -7,11 +7,11 @@ export interface FileHandleOption {
   confirmOverwrite?: boolean | 'confirm';
   // When true, explicit folder/project/multi-file transfers skip files already
   // identical on the destination (same basis as Sync/Compare; size-only on
-  // FTP). Single-file targets are exempt — transferring the one named file is
+  // FTP). Single-file targets are exempt - transferring the one named file is
   // the point. Threaded from config per-profile.
   skipUnmodified?: boolean;
   // When true, hitting the ignore gate shows an info toast instead of silently
-  // doing nothing. Passed only by explicit commands — an unconditional toast
+  // doing nothing. Passed only by explicit commands - an unconditional toast
   // would fire on every uploadOnSave of an ignored file and per ignored
   // subfolder under Sync.
   notifyIgnored?: boolean;

@@ -1,4 +1,4 @@
-// Feature 5 — TransferScheduler wrapper semantics: onTaskStart/onTaskDone
+// Feature 5 - TransferScheduler wrapper semantics: onTaskStart/onTaskDone
 // passthroughs, pause keeps the queue / resume drains it, stop drops queued
 // tasks while in-flight ones finish, and (the deactivate-clean guarantee)
 // stop resolves a PAUSED run even when nothing is in flight to emit idle.
@@ -110,7 +110,7 @@ describe('TransferScheduler wrapper (Feature 5)', () => {
     scheduler.pause();
     first.finish();
     await flush();
-    // paused, queue non-empty, zero in flight — no completion event will come
+    // paused, queue non-empty, zero in flight - no completion event will come
     scheduler.stop();
     await running;
 

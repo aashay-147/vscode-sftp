@@ -1,4 +1,4 @@
-// Feature 2 — Upload/Download overwrite confirmation.
+// Feature 2 - Upload/Download overwrite confirmation.
 // Exercises the confirmation gate in `transferWithType` (single file) and
 // `transferFolder` (one batched prompt), plus the zero-round-trip default and
 // the Sync scope-exclusion. `../../host` is fully mocked so the modal return
@@ -147,7 +147,7 @@ describe('overwrite confirmation (Feature 2)', () => {
     expect(tasks.length).toBe(1);
   });
 
-  test('folder via bare transfer() never prompts — staging owns folder confirmation', async () => {
+  test('folder via bare transfer() never prompts - staging owns folder confirmation', async () => {
     // The staged flow (createTransferHandle) confirms BEFORE transfer() runs
     // and suppresses per-file prompts via _overwriteConfirmed; transfer()
     // itself must not prompt for folders, and children must not prompt either.
@@ -189,7 +189,7 @@ describe('overwrite confirmation (Feature 2)', () => {
   });
 
   test('Sync path never prompts even with confirmOverwrite on (scope exclusion)', async () => {
-    // Modified file present on both sides — the overwrite case. Sync routes it
+    // Modified file present on both sides - the overwrite case. Sync routes it
     // through transferFile (no gate), so no prompt regardless of the flag.
     fillFs({ local: { a: file('a', 2) }, remote: { a: file('$a') } });
     modal.mockResolvedValue(true);

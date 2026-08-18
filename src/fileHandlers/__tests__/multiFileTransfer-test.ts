@@ -1,4 +1,4 @@
-// Features 2+3 — aggregated multi-file staging (U3.6): one counts modal per
+// Features 2+3 - aggregated multi-file staging (U3.6): one counts modal per
 // service, flags-off fan-out preserved byte-for-byte, skipUnmodified dropping
 // identical selections, folders delegated to their own staged flow, Review
 // with a files origin.
@@ -19,7 +19,7 @@ jest.mock('../../app', () => ({
 }));
 jest.mock('../createFileHandler', () => ({
   __esModule: true,
-  // compare.ts calls createFileHandler() at module load — return an inert handler
+  // compare.ts calls createFileHandler() at module load - return an inert handler
   default: () => jest.fn(async () => undefined),
   handleCtxFromUri: jest.fn(),
 }));
@@ -32,7 +32,7 @@ jest.mock('../../host', () => ({
   showModalChoices: jest.fn(),
   showInformationMessage: jest.fn(),
   executeCommand: jest.fn(),
-  // run the batch inline — the vscode catch-all mock's withProgress never
+  // run the batch inline - the vscode catch-all mock's withProgress never
   // settles, so the real implementation would hang the fan-out paths
   showTransferProgress: jest.fn((_title, task) =>
     task(() => undefined, () => undefined)
@@ -142,7 +142,7 @@ describe('transferSelectedFiles (aggregated staging, U3.6)', () => {
 
     expect(modalChoices).not.toHaveBeenCalled();
     expect(upload).toHaveBeenCalledTimes(2);
-    // options passed through untouched — no confirmOverwrite override injected
+    // options passed through untouched - no confirmOverwrite override injected
     expect(upload.mock.calls[0][1]).toEqual({ ignore: null });
   });
 
@@ -151,7 +151,7 @@ describe('transferSelectedFiles (aggregated staging, U3.6)', () => {
     const s2 = makeService('s2', { confirmOverwrite: true });
     const f1 = s1.addFile('one.txt', stat(1), stat(2));
     const f2 = s2.addFile('two.txt', stat(3), stat(4));
-    // both files come from different services — re-register both impls since
+    // both files come from different services - re-register both impls since
     // addFile overwrites the shared mockImplementation
     ctxFromUri.mockImplementation(u => u.$$ctx);
     modalChoices.mockResolvedValue(undefined); // Cancel both
@@ -188,7 +188,7 @@ describe('transferSelectedFiles (aggregated staging, U3.6)', () => {
     });
 
     expect(upload).toHaveBeenCalledTimes(2);
-    // the folder call keeps the base option — its own staged flow (inside the
+    // the folder call keeps the base option - its own staged flow (inside the
     // real handler) owns confirmation, so no override is injected
     const folderCall = upload.mock.calls.find(c => c[0].target.localFsPath === '/local/dir');
     expect(folderCall![1]).toEqual({ ignore: null });

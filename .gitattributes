@@ -4,6 +4,6 @@
 # and turns ordinary edits into whole-file diffs against upstream.
 * text=auto eol=lf
 
-# Binary assets — never EOL-convert these.
+# Binary assets - never EOL-convert these.
 *.png  binary
 *.vsix binary
