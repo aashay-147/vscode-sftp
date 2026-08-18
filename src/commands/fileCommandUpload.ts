@@ -1,6 +1,7 @@
 import { COMMAND_UPLOAD } from '../constants';
 import { upload } from '../fileHandlers';
 import { checkFileCommand } from './abstract/createCommand';
+import { ensureUploadAllowed } from './uploadGuard';
 import { uriFromfspath } from './shared';
 
 export default checkFileCommand({
@@ -8,6 +9,9 @@ export default checkFileCommand({
   getFileTarget: uriFromfspath,
 
   async handleFile(ctx) {
+    if (!ensureUploadAllowed(ctx)) {
+      return;
+    }
     await upload(ctx, { ignore: null, useLocalDownloadPath: true });
   },
 });

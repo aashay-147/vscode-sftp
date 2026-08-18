@@ -22,6 +22,7 @@ import { isPathUnder, resolveLocalDownloadPathBase } from '../../../helper';
 import {
   getDownloadPathBase,
   isUnderDownloadPath,
+  isUploadBlockedByDownloadPath,
   resolveEffectiveTarget,
   resolveRemoteFsPathFromDownloadPath,
 } from '../downloadTarget';
@@ -33,6 +34,7 @@ const REMOTE_PATH = '/var/www';
 function createCtx(options: {
   localDownloadPath?: string;
   localFsPath?: string;
+  restrictUploadsToLocalDownloadPath?: boolean;
 }): FileHandlerContext {
   const localFsPath = options.localFsPath || path.join(BASE_DIR, 'src', 'a.txt');
   const target = UResource.from(Uri.file(localFsPath), {
@@ -46,6 +48,7 @@ function createCtx(options: {
     config: {
       remotePath: REMOTE_PATH,
       localDownloadPath: options.localDownloadPath,
+      restrictUploadsToLocalDownloadPath: options.restrictUploadsToLocalDownloadPath,
       host: 'example.com',
       port: 22,
     },
@@ -149,6 +152,51 @@ describe('resolveRemoteFsPathFromDownloadPath (inverse mapping)', () => {
     expect(
       resolveRemoteFsPathFromDownloadPath(ctx, path.join(BASE_DIR, '_downloads', 'a.txt'))
     ).toBeNull();
+  });
+});
+
+describe('isUploadBlockedByDownloadPath (restrictUploadsToLocalDownloadPath)', () => {
+  const MIRROR_LOCAL = path.join(BASE_DIR, '_downloads', 'src', 'a.txt');
+  const WORKSPACE_LOCAL = path.join(BASE_DIR, 'src', 'a.txt');
+
+  test('restriction off: never blocked', () => {
+    const ctx = createCtx({ localDownloadPath: '_downloads', localFsPath: WORKSPACE_LOCAL });
+    expect(isUploadBlockedByDownloadPath(ctx)).toBe(false);
+  });
+
+  test('restriction on without a mirror: inert, never blocked', () => {
+    const ctx = createCtx({
+      restrictUploadsToLocalDownloadPath: true,
+      localFsPath: WORKSPACE_LOCAL,
+    });
+    expect(isUploadBlockedByDownloadPath(ctx)).toBe(false);
+  });
+
+  test('restriction on, file under the mirror: allowed', () => {
+    const ctx = createCtx({
+      localDownloadPath: '_downloads',
+      restrictUploadsToLocalDownloadPath: true,
+      localFsPath: MIRROR_LOCAL,
+    });
+    expect(isUploadBlockedByDownloadPath(ctx)).toBe(false);
+  });
+
+  test('restriction on, file outside the mirror: blocked', () => {
+    const ctx = createCtx({
+      localDownloadPath: '_downloads',
+      restrictUploadsToLocalDownloadPath: true,
+      localFsPath: WORKSPACE_LOCAL,
+    });
+    expect(isUploadBlockedByDownloadPath(ctx)).toBe(true);
+  });
+
+  test('explicit localFsPath argument overrides the target', () => {
+    const ctx = createCtx({
+      localDownloadPath: '_downloads',
+      restrictUploadsToLocalDownloadPath: true,
+      localFsPath: MIRROR_LOCAL,
+    });
+    expect(isUploadBlockedByDownloadPath(ctx, WORKSPACE_LOCAL)).toBe(true);
   });
 });
 

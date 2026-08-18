@@ -1,6 +1,7 @@
 import { COMMAND_FORCE_UPLOAD } from '../constants';
 import { upload } from '../fileHandlers';
 import { checkFileCommand } from './abstract/createCommand';
+import { ensureUploadAllowed } from './uploadGuard';
 import { uriFromExplorerContextOrEditorContext } from './shared';
 
 export default checkFileCommand({
@@ -8,6 +9,9 @@ export default checkFileCommand({
   getFileTarget: uriFromExplorerContextOrEditorContext,
 
   async handleFile(ctx) {
+    if (!ensureUploadAllowed(ctx)) {
+      return;
+    }
     // Force upload never prompts, never stages, never skips — even with
     // confirmOverwrite/skipUnmodified on. createFileHandler applies call-site
     // options after transformOption, so this overrides the config values and

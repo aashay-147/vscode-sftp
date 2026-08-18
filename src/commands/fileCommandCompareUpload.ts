@@ -3,12 +3,16 @@ import { executeCommand } from '../host';
 import { uploadFile } from '../fileHandlers';
 import { uriFromCompareItem } from './shared';
 import { checkFileCommand } from './abstract/createCommand';
+import { ensureUploadAllowed } from './uploadGuard';
 
 export default checkFileCommand({
   id: COMMAND_COMPARE_UPLOAD,
   getFileTarget: uriFromCompareItem,
 
   async handleFile(ctx) {
+    if (!ensureUploadAllowed(ctx)) {
+      return;
+    }
     // Compare-view upload is an explicit act on a known-differing file; suppress
     // the per-file overwrite prompt so it doesn't double up on the compare flow.
     // skipUnmodified is off too: the entry is known-different, re-checking

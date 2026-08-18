@@ -5,6 +5,7 @@ import { TransferDirection } from '../core';
 import { transferSelectedFiles, renameRemote, removeRemote } from '../fileHandlers';
 import { getGitService, GitAPI, Repository, Status, Change } from '../modules/git';
 import { checkCommand } from './abstract/createCommand';
+import { filterUploadableUris } from './uploadGuard';
 import logger from '../logger';
 import { simplifyPath } from '../helper';
 
@@ -97,7 +98,7 @@ async function handleCommand(hint: any) {
   // reported and skipped inside transferSelectedFiles. Renames and deletes
   // below are separate operations, not overwrites — they run regardless of the
   // upload decision.
-  const uploadUris = creates.concat(uploads).map(change => change.uri);
+  const uploadUris = filterUploadableUris(creates.concat(uploads).map(change => change.uri));
   if (uploadUris.length > 0) {
     await transferSelectedFiles(uploadUris, TransferDirection.LOCAL_TO_REMOTE, {
       useLocalDownloadPath: true,

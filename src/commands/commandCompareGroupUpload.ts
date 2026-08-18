@@ -1,9 +1,11 @@
+import { Uri } from 'vscode';
 import { COMMAND_COMPARE_GROUP_UPLOAD } from '../constants';
 import { uploadFile } from '../fileHandlers';
 import { CompareStatus } from '../fileHandlers/compare';
 import { showConfirmMessageModal } from '../host';
 import { checkCommand } from './abstract/createCommand';
 import { compareGroupEntries, runCompareGroup } from './shared';
+import { filterUploadableUris } from './uploadGuard';
 
 // Upload every file in a compare group to the remote. Additive for a New-Local
 // group (the files don't exist remotely yet); for a Modified group it overwrites
@@ -12,7 +14,19 @@ export default checkCommand({
   id: COMMAND_COMPARE_GROUP_UPLOAD,
 
   async handleCommand(node) {
-    const entries = compareGroupEntries(node);
+    let entries = compareGroupEntries(node);
+    if (!entries.length) {
+      return;
+    }
+
+    // restrictUploadsToLocalDownloadPath: drop blocked entries with one
+    // aggregate warning before counting the modal
+    const allowedFsPaths = new Set(
+      filterUploadableUris(entries.map(entry => Uri.file(entry.localFsPath))).map(
+        uri => uri.fsPath
+      )
+    );
+    entries = entries.filter(entry => allowedFsPaths.has(Uri.file(entry.localFsPath).fsPath));
     if (!entries.length) {
       return;
     }
