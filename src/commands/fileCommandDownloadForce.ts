@@ -10,6 +10,11 @@ export default checkFileCommand({
   async handleFile(ctx) {
     // Force download never prompts, never stages, never skips (see the
     // force-upload command for why the call-site override wins).
-    await download(ctx, { ignore: null, confirmOverwrite: false, skipUnmodified: false });
+    await download(ctx, {
+      ignore: null,
+      confirmOverwrite: false,
+      skipUnmodified: false,
+      useLocalDownloadPath: true,
+    });
   },
 });

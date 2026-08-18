@@ -9,12 +9,15 @@ export default checkFileCommand({
   getFileTarget: uriFromExplorerContextOrEditorContext,
 
   async handleFile(ctx) {
-    await downloadFile(ctx, { ignore: null });
+    await downloadFile(ctx, { ignore: null, useLocalDownloadPath: true });
   },
 
   // Multi-select: aggregate the whole selection into one staged counts modal
   // per service (folders in the selection each run their own staged flow).
   async handleMulti(uris) {
-    await transferSelectedFiles(uris, TransferDirection.REMOTE_TO_LOCAL, { ignore: null });
+    await transferSelectedFiles(uris, TransferDirection.REMOTE_TO_LOCAL, {
+      ignore: null,
+      useLocalDownloadPath: true,
+    });
   },
 });

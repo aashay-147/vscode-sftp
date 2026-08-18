@@ -8,6 +8,6 @@ export default checkFileCommand({
   getFileTarget: uriFromfspath,
 
   async handleFile(ctx) {
-    await download(ctx, { ignore: null });
+    await download(ctx, { ignore: null, useLocalDownloadPath: true });
   },
 });

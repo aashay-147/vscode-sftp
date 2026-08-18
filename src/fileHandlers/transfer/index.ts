@@ -2,7 +2,8 @@ import * as path from 'path';
 import { FileType } from '../../core';
 import { refreshRemoteExplorer } from '../shared';
 import createFileHandler, { FileHandlerContext } from '../createFileHandler';
-import { transfer, sync, TransferOption, SyncOption, TransferDirection } from './transfer';
+import { transfer, sync, SyncOption, TransferDirection } from './transfer';
+import { DownloadOption, resolveEffectiveTarget } from './downloadTarget';
 import { runTransferScheduler } from './progress';
 import {
   StagedTransferCancelledError,
@@ -12,6 +13,12 @@ import {
 
 function createTransferHandle(direction: TransferDirection) {
   return async function handle(this: FileHandlerContext, option) {
+    // Feature 9: remap through the local mirror BEFORE anything reads the
+    // target — the staged pre-flight, transferConfig, progress and afterHandle
+    // all consume this.target, so one reassignment keeps them consistent.
+    // Structural no-op unless the call site flags useLocalDownloadPath and
+    // localDownloadPath is configured.
+    this.target = resolveEffectiveTarget(this, option, direction);
     const remoteFs = await this.fileService.getRemoteFileSystem(this.config);
     const localFs = this.fileService.getLocalFileSystem();
     const { localFsPath, remoteFsPath } = this.target;
@@ -173,7 +180,7 @@ export const sync2Local = createFileHandler<SyncOption>({
   },
 });
 
-export const upload = createFileHandler<TransferOption>({
+export const upload = createFileHandler<DownloadOption>({
   name: 'upload',
   handle: uploadHandle,
   transformOption() {
@@ -193,7 +200,7 @@ export const upload = createFileHandler<TransferOption>({
   },
 });
 
-export const uploadFile = createFileHandler<TransferOption>({
+export const uploadFile = createFileHandler<DownloadOption>({
   name: 'upload file',
   handle: uploadHandle,
   transformOption() {
@@ -213,7 +220,7 @@ export const uploadFile = createFileHandler<TransferOption>({
   },
 });
 
-export const uploadFolder = createFileHandler<TransferOption>({
+export const uploadFolder = createFileHandler<DownloadOption>({
   name: 'upload folder',
   handle: uploadHandle,
   transformOption() {
@@ -233,7 +240,7 @@ export const uploadFolder = createFileHandler<TransferOption>({
   },
 });
 
-export const download = createFileHandler<TransferOption>({
+export const download = createFileHandler<DownloadOption>({
   name: 'download',
   handle: downloadHandle,
   transformOption() {
@@ -248,7 +255,7 @@ export const download = createFileHandler<TransferOption>({
   },
 });
 
-export const downloadFile = createFileHandler<TransferOption>({
+export const downloadFile = createFileHandler<DownloadOption>({
   name: 'download file',
   handle: downloadHandle,
   transformOption() {
@@ -263,7 +270,7 @@ export const downloadFile = createFileHandler<TransferOption>({
   },
 });
 
-export const downloadFolder = createFileHandler<TransferOption>({
+export const downloadFolder = createFileHandler<DownloadOption>({
   name: 'download folder',
   handle: downloadHandle,
   transformOption() {

@@ -27,9 +27,13 @@ import {
 import { handleCtxFromUri, FileHandlerContext } from './createFileHandler';
 import { classifyPair, deriveCompareMtime, CompareEntry, CompareStatus } from './compare';
 import { uploadFile, downloadFile } from './transfer';
+import {
+  DownloadOption,
+  getDownloadPathBase,
+  resolveEffectiveTarget,
+} from './transfer/downloadTarget';
 import { StagePlan } from './transfer/stage';
 import { confirmStagePlan } from './transfer/stagedTransfer';
-import { FileHandleOption } from './option';
 
 async function lstatOrNull(fileSystem: FileSystem, fsPath: string): Promise<FileStats | null> {
   try {
@@ -86,7 +90,7 @@ interface ClassifiedTarget {
 export async function transferSelectedFiles(
   uris: Uri[],
   direction: TransferDirection,
-  baseOption: Partial<FileHandleOption> = {}
+  baseOption: Partial<DownloadOption> = {}
 ): Promise<void> {
   const fromLocal = direction === TransferDirection.LOCAL_TO_REMOTE;
   const handler = fromLocal ? uploadFile : downloadFile;
@@ -102,6 +106,9 @@ export async function transferSelectedFiles(
       reportError(error);
       continue;
     }
+    // Feature 9: remap at context-build time so classification and dispatch
+    // agree on the same local/remote pair (the handler remaps again — idempotent)
+    ctx.target = resolveEffectiveTarget(ctx, baseOption, direction);
     const list = byService.get(ctx.fileService) || [];
     list.push(ctx);
     byService.set(ctx.fileService, list);
@@ -167,6 +174,11 @@ export async function transferSelectedFiles(
     );
 
     if (files.length > 0) {
+      // Feature 9: with the mirror active, the download side of the plan roots
+      // at the mirror base, not the workspace context
+      const localRoot =
+        (baseOption.useLocalDownloadPath && getDownloadPathBase(ctxs[0])) ||
+        fileService.baseDir;
       await transferClassifiedFiles(files, {
         direction,
         confirmOverwrite,
@@ -175,6 +187,7 @@ export async function transferSelectedFiles(
         baseOption,
         fileService,
         config,
+        localRoot,
       });
     }
 
@@ -197,9 +210,11 @@ async function transferClassifiedFiles(
     confirmOverwrite: boolean;
     skipUnmodified: boolean;
     compareMtime: boolean;
-    baseOption: Partial<FileHandleOption>;
+    baseOption: Partial<DownloadOption>;
     fileService: FileService;
     config: FileHandlerContext['config'];
+    // where downloads land locally (mirror base when remapped, else baseDir)
+    localRoot: string;
   }
 ): Promise<void> {
   const { direction, confirmOverwrite, skipUnmodified, compareMtime, baseOption } = args;
@@ -235,7 +250,7 @@ async function transferClassifiedFiles(
 
   const plan: StagePlan = {
     result: {
-      localRoot: args.fileService.baseDir,
+      localRoot: args.localRoot,
       remoteRoot: args.config.remotePath,
       serviceName: args.fileService.name,
       // files origin so a later Refresh re-checks exactly this selection
@@ -256,7 +271,7 @@ async function transferClassifiedFiles(
     sourceLabel: `${files.length} selected file${files.length > 1 ? 's' : ''}`,
     destinationLabel: fromLocal
       ? `${args.config.host}:${args.config.remotePath}`
-      : args.fileService.baseDir,
+      : args.localRoot,
     multiProfileFlow: false,
   });
   if (decision.action !== 'proceed') {
