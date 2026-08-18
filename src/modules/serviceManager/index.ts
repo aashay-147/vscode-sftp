@@ -2,7 +2,12 @@ import { Uri } from 'vscode';
 import * as path from 'path';
 import app from '../../app';
 import logger from '../../logger';
-import { simplifyPath, reportError } from '../../helper';
+import {
+  isPathUnder,
+  resolveLocalDownloadPathBase,
+  simplifyPath,
+  reportError,
+} from '../../helper';
 import { UResource, FileService, TransferTask } from '../../core';
 import { validateConfig } from '../config';
 import watcherService from '../fileWatcher';
@@ -17,6 +22,29 @@ const serviceManager = new Trie<FileService>(
     delimiter: path.sep,
   }
 );
+
+// Feature 9: extra trie prefixes registered for out-of-workspace mirror bases,
+// tracked per service so disposal removes them (config reload = dispose +
+// recreate, so re-registration is automatic).
+const serviceAliases = new Map<FileService, string[]>();
+
+// Every resolved localDownloadPath base this config can produce: the base
+// config's plus each profile's override (a profile without the key inherits
+// the base one, which is already included).
+function collectMirrorBases(config: any, baseDir: string): string[] {
+  const bases = new Set<string>();
+  const add = (localDownloadPath?: string) => {
+    const base = resolveLocalDownloadPathBase(localDownloadPath, baseDir);
+    if (base) {
+      bases.add(normalizePathForTrie(base));
+    }
+  };
+  add(config.localDownloadPath);
+  if (config.profiles) {
+    Object.keys(config.profiles).forEach(name => add(config.profiles[name].localDownloadPath));
+  }
+  return Array.from(bases);
+}
 
 function maskConfig(config) {
   const copy = {};
@@ -96,6 +124,14 @@ export function createFileService(config: any, workspace: string) {
   logger.info(`config at ${normalizedBasePath}`, maskConfig(config));
 
   serviceManager.add(normalizedBasePath, service);
+  // Feature 9: register out-of-workspace mirror bases as extra prefixes so a
+  // right-click/command on a mirror file resolves to this service. Bases under
+  // the service's own baseDir need no alias (the baseDir prefix covers them).
+  const aliases = collectMirrorBases(config, normalizedBasePath).filter(
+    base => !isPathUnder(normalizedBasePath, base)
+  );
+  aliases.forEach(alias => serviceManager.add(alias, service));
+  serviceAliases.set(service, aliases);
   service.name = config.name;
   service.setConfigValidator(validateConfig);
   service.setWatcherService(watcherService);
@@ -142,6 +178,11 @@ export function getFileService(uri: Uri): FileService {
 }
 
 export function disposeFileService(fileService: FileService) {
+  const aliases = serviceAliases.get(fileService);
+  if (aliases) {
+    aliases.forEach(alias => serviceManager.remove(alias));
+    serviceAliases.delete(fileService);
+  }
   serviceManager.remove(fileService.baseDir);
   fileService.dispose();
 }

@@ -2,6 +2,7 @@ import { Uri } from 'vscode';
 import * as path from 'path';
 import app from '../app';
 import { UResource, FileService, ServiceConfig } from '../core';
+import { isPathUnder, resolveLocalDownloadPathBase } from '../helper';
 import { showInformationMessage } from '../host';
 import logger from '../logger';
 import { getFileService } from '../modules/serviceManager';
@@ -31,6 +32,54 @@ interface FileHandlerOption<T> {
   transformOption?: FileHandlerContextMethod<T>;
 }
 
+// Which local base a local uri maps against. Uris under the service's baseDir
+// keep the workspace mapping (so uploadOnSave/watcher behavior never changes);
+// a uri outside it can only have resolved here via a mirror-base trie alias
+// (Feature 9), so it maps as an exact pair against the ACTIVE profile's
+// resolved base. A uri covered only by a non-active profile's mirror gets a
+// clear error naming that profile.
+function resolveLocalBasePath(
+  fileService: FileService,
+  config: ServiceConfig,
+  uri: Uri
+): string {
+  if (UResource.isRemote(uri) || isPathUnder(fileService.baseDir, uri.fsPath)) {
+    return fileService.baseDir;
+  }
+
+  const base = resolveLocalDownloadPathBase(config.localDownloadPath, fileService.baseDir);
+  if (base && isPathUnder(base, uri.fsPath)) {
+    return base;
+  }
+
+  const profile = findProfileWithBaseCovering(fileService, uri.fsPath);
+  if (profile) {
+    throw new Error(
+      `'${uri.fsPath}' is under the localDownloadPath of profile '${profile}', which is not active.` +
+        ' Run "SFTP: Set Profile" to switch to it first.'
+    );
+  }
+  return fileService.baseDir;
+}
+
+function findProfileWithBaseCovering(
+  fileService: FileService,
+  fsPath: string
+): string | undefined {
+  for (const name of fileService.getAvailableProfiles()) {
+    try {
+      const config = fileService.getConfig(name);
+      const base = resolveLocalDownloadPathBase(config.localDownloadPath, fileService.baseDir);
+      if (base && isPathUnder(base, fsPath)) {
+        return name;
+      }
+    } catch (error) {
+      // invalid profile config — not a candidate
+    }
+  }
+  return undefined;
+}
+
 export function handleCtxFromUri(uri: Uri): FileHandlerContext {
   const fileService = getFileService(uri);
   if (!fileService) {
@@ -42,7 +91,7 @@ export function handleCtxFromUri(uri: Uri): FileHandlerContext {
   }
   const config = fileService.getConfig();
   const target = UResource.from(uri, {
-    localBasePath: fileService.baseDir,
+    localBasePath: resolveLocalBasePath(fileService, config, uri),
     remoteBasePath: config.remotePath,
     remoteId: fileService.id,
     remote: {
@@ -71,9 +120,29 @@ export function allHandleCtxFromUri(uri: Uri): Array<FileHandlerContext> {
 
   const configArr = fileService.getAllConfig();
 
-  return configArr.map(config => {
+  // Feature 9: a local uri outside baseDir can only be a mirror file. Each
+  // profile maps it against its OWN resolved base; profiles whose mirror does
+  // not cover the uri are skipped (a to-all-profiles action cannot invent a
+  // sensible workspace mapping for a path outside the workspace).
+  const outsideBaseDir =
+    !UResource.isRemote(uri) && !isPathUnder(fileService.baseDir, uri.fsPath);
+  let candidates = configArr;
+  if (outsideBaseDir) {
+    candidates = configArr.filter(config => {
+      const base = resolveLocalDownloadPathBase(config.localDownloadPath, fileService.baseDir);
+      return Boolean(base && isPathUnder(base, uri.fsPath));
+    });
+    if (candidates.length === 0) {
+      throw new Error(`Config Not Found. (${uri.toString(true)})`);
+    }
+  }
+
+  return candidates.map(config => {
+    const localBasePath = outsideBaseDir
+      ? resolveLocalDownloadPathBase(config.localDownloadPath, fileService.baseDir)!
+      : fileService.baseDir;
     const target = UResource.from(uri, {
-      localBasePath: fileService.baseDir,
+      localBasePath,
       remoteBasePath: config.remotePath,
       remoteId: fileService.id,
       remote: {
