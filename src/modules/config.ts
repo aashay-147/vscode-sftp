@@ -41,6 +41,8 @@ const configScheme = {
   useTempFile: Joi.boolean(),
   openSsh: Joi.boolean(),
   downloadOnOpen: Joi.boolean().allow('confirm'),
+  localDownloadPath: Joi.string(),
+  restrictUploadsToLocalDownloadPath: Joi.boolean(),
   confirmOverwrite: Joi.boolean().allow('confirm'),
   skipUnmodified: Joi.boolean(),
 
@@ -82,6 +84,8 @@ const defaultConfig = {
   useTempFile: false,
   openSsh: false,
   downloadOnOpen: false,
+  // localDownloadPath has no default — unset means "no mirror"
+  restrictUploadsToLocalDownloadPath: false,
   confirmOverwrite: false,
   skipUnmodified: false,
   ignore: [],

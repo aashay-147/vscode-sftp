@@ -5,7 +5,12 @@ import * as sshConfig from 'ssh-config';
 import app from '../app';
 import logger from '../logger';
 import { getUserSetting } from '../host';
-import { replaceHomePath, resolvePath } from '../helper';
+import {
+  isPathUnder,
+  replaceHomePath,
+  resolveLocalDownloadPathBase,
+  resolvePath,
+} from '../helper';
 import { SETTING_KEY_REMOTE } from '../constants';
 import upath from './upath';
 import Ignore from './ignore';
@@ -42,6 +47,11 @@ interface ServiceOption {
   downloadOnOpen: boolean | 'confirm';
   confirmOverwrite: boolean | 'confirm';
   skipUnmodified: boolean;
+  // Feature 9: local mirror for explicit transfers. Stays RAW here (as typed in
+  // config) — resolution against baseDir is centralized in
+  // helper/paths.resolveLocalDownloadPathBase.
+  localDownloadPath?: string;
+  restrictUploadsToLocalDownloadPath?: boolean;
   // Feature 4: size of the per-profile remote connection pool. Default 1 keeps
   // the historical single-shared-connection behavior; the effective pool size
   // is min(maxConnections, concurrency, MAX_POOL_SIZE) and always 1 for FTP.
@@ -168,6 +178,10 @@ function getHostInfo(config) {
     'downloadOnOpen',
     'confirmOverwrite',
     'skipUnmodified',
+    // mirror settings must not enter the connect-option hash — two profiles
+    // differing only in them must share one connection pool
+    'localDownloadPath',
+    'restrictUploadsToLocalDownloadPath',
     'ignore',
     'ignoreFile',
     'watcher',
@@ -678,6 +692,14 @@ export default class FileService {
   private _createIgnoreFn(config: FileServiceConfig): ServiceConfig['ignore'] {
     const localContext = this.baseDir;
     const remoteContext = config.remotePath;
+    // Feature 9: out-of-workspace mirror paths would otherwise fall through to
+    // the remote branch and be misclassified. Paths under baseDir keep
+    // baseDir-relative classification, so `ignore` patterns fencing an
+    // in-workspace mirror folder keep working.
+    const downloadPathBase = resolveLocalDownloadPathBase(
+      config.localDownloadPath,
+      this.baseDir
+    );
 
     const ignoreConfig = filesIgnoredFromConfig(config);
     if (ignoreConfig.length <= 0) {
@@ -692,6 +714,9 @@ export default class FileService {
       if (normalizedPath.indexOf(localContext) === 0) {
         // local path
         relativePath = path.relative(localContext, fsPath);
+      } else if (downloadPathBase && isPathUnder(downloadPathBase, normalizedPath)) {
+        // local mirror path outside the workspace context
+        relativePath = path.relative(downloadPathBase, fsPath);
       } else {
         // remote path
         relativePath = upath.relative(remoteContext, fsPath);

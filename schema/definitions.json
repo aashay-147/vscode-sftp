@@ -70,6 +70,15 @@
         "description": "True to download when a file opens.",
         "default": "confirm"
       },
+      "localDownloadPath": {
+        "type": "string",
+        "description": "Local mirror folder for explicit transfers. Explicit downloads land here (preserving the remote folder structure) instead of the workspace context, and explicit uploads/re-downloads/compare/diff of files under this folder automatically map back to the matching remote path. Relative paths resolve against `context`; `~/` and absolute paths are supported; per-profile overridable. Implicit flows (uploadOnSave, watcher, sync, downloadOnOpen, Edit in Local, List) keep the workspace mapping. Unset = mirror off."
+      },
+      "restrictUploadsToLocalDownloadPath": {
+        "type": "boolean",
+        "description": "When true (and `localDownloadPath` is set), explicit uploads and local-to-remote sync of files OUTSIDE the mirror folder are blocked with a warning — a safety fence so only files downloaded into the mirror can go back up. Inert without `localDownloadPath`. Does not affect uploadOnSave or the watcher.",
+        "default": false
+      },
       "confirmOverwrite": {
         "enum": ["confirm", true, false],
         "description": "Prompt before overwriting an existing destination file on an explicit upload/download. `true` and `\"confirm\"` are synonyms. Default false keeps silent one-click overwrite. Does not affect Sync, Force, or Edit-in-Local.",
