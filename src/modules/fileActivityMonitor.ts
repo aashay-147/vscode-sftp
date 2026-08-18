@@ -13,6 +13,7 @@ import {
 } from './serviceManager';
 import { reportError, isValidFile, isConfigFile, isInWorkspace } from '../helper';
 import { downloadFile, uploadFile } from '../fileHandlers';
+import { refreshUploadMenuContext } from './uploadMenuContext';
 
 let workspaceWatcher: vscode.Disposable;
 
@@ -35,6 +36,7 @@ async function handleConfigSave(uri: vscode.Uri) {
     reportError(error);
   } finally {
     app.remoteExplorer.refresh();
+    refreshUploadMenuContext();
   }
 }
 

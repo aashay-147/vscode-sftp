@@ -10,6 +10,7 @@ import {
   lstatTypeOrNull,
   stageAndConfirmFolderTransfer,
 } from './stagedTransfer';
+import { refreshUploadMenuContext } from '../../modules/uploadMenuContext';
 
 function createTransferHandle(direction: TransferDirection) {
   return async function handle(this: FileHandlerContext, option) {
@@ -253,6 +254,11 @@ export const download = createFileHandler<DownloadOption>({
       skipUnmodified: config.skipUnmodified,
     };
   },
+  afterHandle() {
+    // downloads can create new mirror directories - keep the menu-gating
+    // allow-set current (debounced no-op unless the feature is opted in)
+    refreshUploadMenuContext();
+  },
 });
 
 export const downloadFile = createFileHandler<DownloadOption>({
@@ -268,6 +274,9 @@ export const downloadFile = createFileHandler<DownloadOption>({
       skipUnmodified: config.skipUnmodified,
     };
   },
+  afterHandle() {
+    refreshUploadMenuContext();
+  },
 });
 
 export const downloadFolder = createFileHandler<DownloadOption>({
@@ -282,5 +291,8 @@ export const downloadFolder = createFileHandler<DownloadOption>({
       confirmOverwrite: config.confirmOverwrite,
       skipUnmodified: config.skipUnmodified,
     };
+  },
+  afterHandle() {
+    refreshUploadMenuContext();
   },
 });

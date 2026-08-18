@@ -11,6 +11,7 @@ import { getAllFileService, createFileService, disposeFileService } from './modu
 import { getWorkspaceFolders, setContextValue } from './host';
 import RemoteExplorer from './modules/remoteExplorer';
 import CompareExplorer from './modules/compareExplorer';
+import { refreshUploadMenuContext } from './modules/uploadMenuContext';
 
 async function setupWorkspaceFolder(dir) {
   const configs = await tryLoadConfigs(dir);
@@ -51,11 +52,14 @@ export async function activate(context: vscode.ExtensionContext) {
     if (app.remoteExplorer) {
       app.remoteExplorer.refresh();
     }
+    // profile switch can change localDownloadPath / the menu-disabling flag
+    refreshUploadMenuContext();
   });
   try {
     await setup(workspaceFolders);
     app.remoteExplorer = new RemoteExplorer(context);
     app.compareExplorer = new CompareExplorer(context);
+    refreshUploadMenuContext();
   } catch (error) {
     reportError(error);
   }
