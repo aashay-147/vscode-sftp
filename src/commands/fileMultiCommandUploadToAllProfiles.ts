@@ -11,6 +11,6 @@ export default checkFileCommand({
     // Multi-profile flow: when the target is a folder, the staged modal offers
     // Skip This Profile / Cancel remaining instead of Review (compare-view
     // actions bind to the active profile only).
-    await upload(ctx, { ignore: null, _multiProfileFlow: true });
+    await upload(ctx, { ignore: null, _multiProfileFlow: true, useLocalDownloadPath: true });
   },
 });

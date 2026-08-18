@@ -10,6 +10,6 @@ export default checkFileCommand({
   async handleFile(ctx) {
     // Explicit command: tell the user when the target matches ignore instead
     // of silently doing nothing.
-    await uploadFolder(ctx, { notifyIgnored: true });
+    await uploadFolder(ctx, { notifyIgnored: true, useLocalDownloadPath: true });
   },
 });

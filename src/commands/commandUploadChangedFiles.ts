@@ -99,7 +99,9 @@ async function handleCommand(hint: any) {
   // upload decision.
   const uploadUris = creates.concat(uploads).map(change => change.uri);
   if (uploadUris.length > 0) {
-    await transferSelectedFiles(uploadUris, TransferDirection.LOCAL_TO_REMOTE);
+    await transferSelectedFiles(uploadUris, TransferDirection.LOCAL_TO_REMOTE, {
+      useLocalDownloadPath: true,
+    });
   }
   await Promise.all(
     renames.map(change =>

@@ -12,6 +12,11 @@ export default checkFileCommand({
     // confirmOverwrite/skipUnmodified on. createFileHandler applies call-site
     // options after transformOption, so this overrides the config values and
     // preserves "force = transfer exactly this, no questions".
-    await upload(ctx, { ignore: null, confirmOverwrite: false, skipUnmodified: false });
+    await upload(ctx, {
+      ignore: null,
+      confirmOverwrite: false,
+      skipUnmodified: false,
+      useLocalDownloadPath: true,
+    });
   },
 });
