@@ -23,6 +23,7 @@ The upstream extension is a great sync tool, but it stops short of a full folder
 - **Clear Compare** — reset the Folder Compare view back to empty on demand.
 - **Overwrite confirmation** (`confirmOverwrite`) — explicit uploads/downloads prompt before overwriting an existing destination file; folder-level transfers show one summary modal with a *Review in Compare View* option.
 - **Diff-only transfer** (`skipUnmodified`) — explicit folder/project/multi-file transfers skip files already identical on the destination, the way Sync does.
+- **Local download mirror** (`localDownloadPath`) — explicit downloads land in a configurable mirror folder (per-profile, in or outside the workspace) preserving the remote structure; uploads, re-downloads, compare, and diff of mirror files automatically map back to the true remote path. Optional `restrictUploadsToLocalDownloadPath` blocks uploads from outside the mirror.
 - **Per-operation progress** — determinate per-file progress notifications with cancel, plus global pause/resume/stop for all transfers.
 - **Parallel transfers** (`maxConnections`) — a per-profile connection pool so uploads, downloads, syncs, and folder walks genuinely run in parallel.
 

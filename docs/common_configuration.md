@@ -263,6 +263,55 @@ Skip files already identical on the destination during explicit folder/project/m
 }
 ```
 
+### localDownloadPath
+A **local mirror** for explicit transfers, decoupled from the workspace `context` mapping.
+
+| Key | Value | Default |
+| --- | --- | --- |
+| *localDownloadPath* | *string* | *(unset — mirror off)* |
+
+```json
+{
+  "localDownloadPath": "./_downloads"
+}
+```
+
+Relative paths resolve against `context`; `~/` and absolute paths (including folders **outside** the workspace) are supported. Overridable per profile.
+
+**Forward mapping (downloads).** Explicit downloads (`Download`, `Download File/Folder/Project`, `Download Active File/Folder`, `Force Download`, compare-view downloads) land under the mirror, preserving the remote folder structure: remote `/var/www/src/a.txt` with `remotePath: /var/www` downloads to `<mirror>/src/a.txt`.
+
+**Inverse mapping (everything acting on a mirror file).** Any explicit action on a file *under* the mirror automatically maps back to the true remote path:
+
+- **Upload** of `<mirror>/src/a.txt` goes to `/var/www/src/a.txt` — never to `/var/www/_downloads/...`.
+- **Re-download** of a mirror file lands in place.
+- **Folder Compare** of a mirror folder walks the matching remote folder (and comparing a remote folder walks its mirror counterpart).
+- **Diff with Remote** compares against the true remote counterpart.
+
+**Unaffected flows** keep the plain workspace `context` mapping: `uploadOnSave`, the watcher, `Sync` (all directions), `downloadOnOpen`, `Edit in Local`, the `List` commands, and `Upload Project`.
+
+**Profiles.** Each profile may set its own `localDownloadPath` (a profile without the key inherits the root one). A profile switch takes effect on the next command — no reload. Caveats: *Upload ... to All Profiles* of a mirror file uploads per-profile — a profile whose own mirror doesn't contain the file is skipped; compare results made under one profile act against the *active* profile until you Refresh (Refresh re-derives everything from the active profile's settings).
+
+**In-workspace mirrors and uploadOnSave.** A mirror inside the workspace (like `./_downloads`) is still part of the workspace mapping for implicit flows, so saving a mirror file with `uploadOnSave` on uploads it to `/remote/_downloads/...`. Fence it off with `"ignore": ["_downloads"]` if that matters to you.
+
+### restrictUploadsToLocalDownloadPath
+A safety fence for the mirror workflow: block explicit uploads of anything **outside** the mirror.
+
+| Key | Value | Default |
+| --- | --- | --- |
+| *restrictUploadsToLocalDownloadPath* | *boolean* | `false` |
+
+```json
+{
+  "restrictUploadsToLocalDownloadPath": true
+}
+```
+
+When on (and `localDownloadPath` is set), explicit uploads — including `Upload Project`, `Upload Changed Files`, compare-view uploads, and `Sync Local ➞ Remote` / `Sync Both Directions` — of files outside the mirror are blocked with:
+
+> `'<path>' is outside localDownloadPath (<base>) — upload blocked by restrictUploadsToLocalDownloadPath`
+
+Multi-file selections drop the blocked files with one aggregate warning and transfer the rest. Without `localDownloadPath` the option is inert. `uploadOnSave` and the watcher are not gated (disable them instead if you don't want implicit uploads).
+
 ### ignore
 Ignore can be used to ignore files and folders from sync, and even supports wildcards using `*`. <br>
 This is the same behavior as gitignore, all paths relative to context of the current configuration.
