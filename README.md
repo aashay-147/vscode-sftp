@@ -1,15 +1,30 @@
 # SFTP Workbench
 
-A Dreamweaver-style SFTP/FTP workflow for VS Code: folder compare with click-to-diff, staged transfers with overwrite confirmation, parallel connections, and a remote explorer - on top of the classic sync/upload-on-save workflow.
+A Dreamweaver-style SFTP/FTP workflow for VS Code: folder compare with click-to-diff, staged transfers with overwrite confirmation, parallel connections, and a remote explorer - on top of the classic sync/upload-on-save workflow. Forked from [Natizyskunk/vscode-sftp](https://github.com/Natizyskunk/vscode-sftp) - see [Credits & lineage](#credits--lineage).
 
-> ### Credits & lineage
->
-> SFTP Workbench stands on the shoulders of two projects and their authors:
->
-> - **[liximomo](https://github.com/liximomo)** wrote the original [vscode-sftp](https://github.com/liximomo/vscode-sftp) extension, whose architecture and feature set still form the core of this one.
-> - **[Natizyskunk](https://github.com/Natizyskunk)** (Natan FOURIÉ) maintained and extended it for years as [Natizyskunk/vscode-sftp](https://github.com/Natizyskunk/vscode-sftp) ([marketplace listing](https://marketplace.visualstudio.com/items?itemName=Natizyskunk.sftp)) after the original was deprecated.
->
-> This fork builds on Natizyskunk's line. If you find it useful, please consider [supporting the original authors](#credits--support-the-original-authors).
+- **VS Code Marketplace**: https://marketplace.visualstudio.com/items?itemName=Heuristics-io.sftp-workbench
+- **Open VSX**: https://open-vsx.org/extension/heuristics-io/sftp-workbench
+- **Project repository**: https://github.com/aashay-147/vscode-sftp
+- **VSIX releases**: https://github.com/aashay-147/vscode-sftp/releases
+
+## Table of Contents
+
+- [Why this fork](#why-this-fork)
+- [Features](#features)
+- [Roadmap](#roadmap)
+- [Privacy](#privacy)
+- [Installation](#installation)
+- [Documentation](#documentation)
+- [Usage](#usage)
+- [Example configurations](#example-configurations)
+- [Folder Compare](#folder-compare)
+- [Remote Explorer](#remote-explorer)
+- [Debug](#debug)
+- [FAQ](#faq)
+- [Changelog](#changelog)
+- [Support](#support)
+- [License](#license)
+- [Credits & lineage](#credits--lineage)
 
 ## Why this fork
 
@@ -23,7 +38,7 @@ The upstream extension is a great sync tool, but it stops short of a full folder
 - **Clear Compare** - reset the Folder Compare view back to empty on demand.
 - **Overwrite confirmation** (`confirmOverwrite`) - explicit uploads/downloads prompt before overwriting an existing destination file; folder-level transfers show one summary modal with a *Review in Compare View* option.
 - **Diff-only transfer** (`skipUnmodified`) - explicit folder/project/multi-file transfers skip files already identical on the destination, the way Sync does.
-- **Local download mirror** (`localDownloadPath`) - explicit downloads land in a configurable mirror folder (per-profile, in or outside the workspace) preserving the remote structure; uploads, re-downloads, compare, and diff of mirror files automatically map back to the true remote path. Uploads from outside the mirror are blocked (optional `disableUploadMenusOutsideLocalDownloadPath` also grays out their menu items).
+- **Local download mirror** (`localDownloadPath`) - explicit downloads land in a configurable mirror folder (per-profile, relative to the workspace or an absolute path anywhere on disk) preserving the remote structure; uploads, re-downloads, compare, and diff of mirror files automatically map back to the true remote path. Uploads from outside the mirror are blocked with a warning so stray files can never land in the remote root; the optional `disableUploadMenusOutsideLocalDownloadPath` setting additionally grays out the upload menu items on out-of-mirror files. See [localDownloadPath](docs/common_configuration.md#localdownloadpath).
 - **Per-operation progress** - determinate per-file progress notifications with cancel, plus global pause/resume/stop for all transfers.
 - **Parallel transfers** (`maxConnections`) - a per-profile connection pool so uploads, downloads, syncs, and folder walks genuinely run in parallel.
 
@@ -40,19 +55,31 @@ The upstream extension is a great sync tool, but it stops short of a full folder
 
 - **Password security in config** - move stored passwords out of plaintext `.vscode/sftp.json` into VS Code's `SecretStorage`, with a migration path for existing configs.
 - **Custom location for the SFTP config file** - point the extension at an `sftp.json` outside the default `.vscode/` folder.
-- **Configurable download location** - a per-profile download destination so explicit downloads can land outside the working `context` folder.
 - Remaining Staged Transfer Workflow phases.
+
+## Privacy
+
+SFTP Workbench collects **no data whatsoever**: no telemetry, no usage analytics, no crash reporting, no tracking of any kind. The extension talks only to the servers you configure in `sftp.json` - nothing else leaves your machine.
 
 ## Installation
 
-Install **SFTP Workbench** from the VS Code Marketplace (extension id: `heuristics-io.sftp-workbench`).
-
 > ⚠️ **Before installing:** disable or uninstall any other vscode-sftp variant (`liximomo.sftp`, `Natizyskunk.sftp`, or other forks). They register the same `sftp.*` commands, views, and settings - running two at once will make commands collide.
+
+### Method 1 (Marketplace / Open VSX)
 
 1. Select Extensions (Ctrl + Shift + X).
 2. Disable/uninstall any other SFTP extension variants.
-3. Search for `SFTP Workbench` and install.
+3. Search for `SFTP Workbench` (extension id: `heuristics-io.sftp-workbench`) and install.
 4. Voilà!
+
+Also available on [Open VSX](https://open-vsx.org/extension/heuristics-io/sftp-workbench) for VSCodium and other Open VSX-based editors.
+
+### Method 2 (Manual VSIX installation)
+
+1. Download the latest `.vsix` file from the [Releases](https://github.com/aashay-147/vscode-sftp/releases) page.
+2. In the Extensions view, click the ellipsis (`...`, More Actions) at the top right and select **Install from VSIX…**.
+3. Locate the downloaded VSIX file and select it.
+4. Reload VS Code.
 
 Your existing `.vscode/sftp.json` keeps working unchanged - the configuration format, command ids, and settings are fully compatible with vscode-sftp.
 
@@ -341,6 +368,27 @@ In sftp.json:
 
 ## FAQ
 You can see all the Frequently Asked Questions [here](./FAQ.md).
+
+## Changelog
+
+All notable changes are documented in [CHANGELOG.md](CHANGELOG.md).
+
+## Support
+
+If you hit a bug or have a question, open an issue on the [project repository](https://github.com/aashay-147/vscode-sftp/issues).
+
+## License
+
+Licensed under the MIT License - see [LICENSE](LICENSE).
+
+## Credits & lineage
+
+SFTP Workbench stands on the shoulders of two projects and their authors:
+
+- **[liximomo](https://github.com/liximomo)** wrote the original [vscode-sftp](https://github.com/liximomo/vscode-sftp) extension, whose architecture and feature set still form the core of this one.
+- **[Natizyskunk](https://github.com/Natizyskunk)** (Natan FOURIÉ) maintained and extended it for years as [Natizyskunk/vscode-sftp](https://github.com/Natizyskunk/vscode-sftp) ([marketplace listing](https://marketplace.visualstudio.com/items?itemName=Natizyskunk.sftp)) after the original was deprecated.
+
+This fork builds on Natizyskunk's line. If you find it useful, please consider supporting the original authors below.
 
 ## Credits & support the original authors
 

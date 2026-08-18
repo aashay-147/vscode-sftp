@@ -25,6 +25,8 @@ Download the remote version of the current file and overwrite the local copy.
 ### SFTP: Download Active Folder
 Download the entire folder the current file is located in.
 
+*Note:* with [localDownloadPath](common_configuration.md#localdownloadpath) set, explicit downloads land under the mirror folder (preserving the remote structure), actions on files under the mirror map back to the true remote path, and explicit uploads of files outside the mirror are blocked.
+
 ### SFTP: Sync Local -> Remote
 1. Any files that exist on both local and remote that have a different timestamp between local and remote are copied over.
 2. Any files that only exist on the local are copied over.
@@ -89,6 +91,17 @@ Toggle the view layout between the flat status lists and a nested path tree (vie
 
 ### Diff with Local (`sftp.diffWithLocal`)
 From a Remote Explorer file, open a diff of the remote file against its local counterpart (the mirror of `Diff with Remote`).
+
+
+## Folder Compare - per-file actions
+
+Inline and context-menu actions on a single compare entry. The comparison re-runs after a transfer or timestamp action.
+
+- **Diff with Remote** (`sftp.compare.diff`) - open the local/remote diff (also runs on click for *Modified* / *Timestamp Only* entries).
+- **Download from Remote** (`sftp.compare.download`) / **Upload to Remote** (`sftp.compare.upload`) - transfer just that file.
+- **Match Timestamp (Use Remote/Use Local)** (`sftp.compare.stampFromRemote` / `sftp.compare.stampFromLocal`) - align the modification time without transferring content.
+- **Reveal in Explorer / Reveal in Remote Explorer** (`sftp.compare.revealInExplorer` / `sftp.compare.revealInRemoteExplorer`) - jump to the file on the side guaranteed to exist by its status.
+- **Delete on Remote** (`sftp.compare.deleteRemote`) / **Delete Locally** (`sftp.compare.deleteLocal`) - remove a *New Remote* / *New Local* file (modal confirmation naming the exact path).
 
 
 ## Folder Compare - group actions

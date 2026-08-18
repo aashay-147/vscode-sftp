@@ -22,6 +22,8 @@ The configuration file can always be accessed with `CTRL` + `Shift` + `P`, and s
 - [useTempFile](#usetempfile)
 - [openSsh](#openssh)
 - [downloadOnOpen](#downloadonopen)
+- [confirmOverwrite](#confirmoverwrite)
+- [skipUnmodified](#skipunmodified)
 - [localDownloadPath](#localdownloadpath)
 - [disableUploadMenusOutsideLocalDownloadPath](#disableuploadmenusoutsidelocaldownloadpath)
 - [syncOption](#syncoption)
@@ -40,6 +42,7 @@ The configuration file can always be accessed with `CTRL` + `Shift` + `P`, and s
 - [passphrase](#passphrase)
 - [interactiveAuth](#interactiveauth)
 - [algorithms](#algorithms)
+- [maxConnections](#maxconnections)
 - [sshConfigPath](#sshconfigpath)
 - [sshCustomParams](#sshcustomparams)
 
@@ -242,6 +245,32 @@ Download the file from the remote server whenever it is opened.
 }
 ```
 
+### confirmOverwrite
+Ask before an explicit upload/download overwrites an existing destination file. Single-file transfers prompt per file; folder/project/multi-file transfers show one summary modal with **Transfer**, **Review in Compare View**, and **Cancel**. Sync, Force transfers, Folder Compare actions, and the implicit paths (uploadOnSave, downloadOnOpen, watcher) never prompt. See [common configuration](./common_configuration.md#confirmoverwrite).
+
+| Key | Value | Default |
+| --- | --- | --- |
+| *confirmOverwrite* | *boolean* or `"confirm"` | `false` |
+
+```json
+{
+  "confirmOverwrite": true
+}
+```
+
+### skipUnmodified
+Skip files already identical on the destination during explicit folder/project/multi-file uploads/downloads (same size+mtime basis as Sync and Folder Compare; size-only on FTP). Single-file commands still transfer their one named file. See [common configuration](./common_configuration.md#skipunmodified).
+
+| Key | Value | Default |
+| --- | --- | --- |
+| *skipUnmodified* | *boolean* | `false` |
+
+```json
+{
+  "skipUnmodified": true
+}
+```
+
 ### localDownloadPath
 Local mirror folder for explicit transfers. Explicit downloads land here, preserving the remote folder structure, instead of the workspace `context`; explicit uploads, re-downloads, compare, and diff of files **under** this folder automatically map back to the matching remote path. When set, explicit uploads and local-to-remote sync of files **outside** the mirror are blocked with a warning (`uploadOnSave` and the watcher are unaffected). Relative paths resolve against `context`; `~/` and absolute paths are supported. Overridable per profile. See [common configuration](./common_configuration.md#localdownloadpath) for the full semantics.
 
@@ -311,19 +340,6 @@ Update the destination only if a newer version is on the source filesystem.
     "ignoreExisting": false,
     "update": true
   },
-}
-```
-
-### useTempFile
-Upload temp file on every save operation of VSCode to avoid breaking a webpage when a user accesses it while the file is still being uploaded (is incomplete).
-
-| Key | Value | Default |
-| --- | --- | --- |
-| *useTempFile* | *boolean* | `false` |
-
-```json
-{
-  "useTempFile": true
 }
 ```
 
@@ -592,6 +608,19 @@ Explicit overrides for the default transport layer algorithms used for the conne
       "hmac-sha2-512"
     ]
   },
+}
+```
+
+### maxConnections
+Pool up to this many SFTP connections per profile so transfers, syncs, and folder walks run in parallel. The pool grows lazily (extra connections open only while enough operations are in flight) and is capped by `concurrency` and a hard limit of 8. Interactive credentials are asked once and reused. FTP is unaffected (its protocol serializes on one control connection); `1` is the historical single-connection behavior.
+
+| Key | Value | Default |
+| --- | --- | --- |
+| *maxConnections* | *number* | `1` |
+
+```json
+{
+  "maxConnections": 4
 }
 ```
 
