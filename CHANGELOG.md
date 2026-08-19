@@ -1,4 +1,11 @@
+## 2.2.0 - 2026-08-19
+
+* New Feature : Implicit upload guard - whenever `localDownloadPath` is set, explicit uploads and local-to-remote sync of files outside the mirror are blocked with a warning (an out-of-mirror upload would land at the workspace `context` mapping or above `remotePath`, then circulate back down on the next download). The `restrictUploadsToLocalDownloadPath` option from 2.1.0 is removed; the guard now always applies. `uploadOnSave` and the watcher are not gated.
+* New Feature : `disableUploadMenusOutsideLocalDownloadPath` - opt-in setting that additionally grays out the upload and local-to-remote sync context-menu items for files and folders outside the mirror.
+* Docs : restructured README (links, table of contents, installation methods, what's new), added a Privacy statement (no data collection or telemetry), refreshed configuration/commands/settings docs to the current option set.
+
 ## 2.0.0 - SFTP Workbench (first release under new listing)
+
 The extension is now published as **SFTP Workbench** (`heuristics-io.sftp-workbench`), a fork of vscode-sftp by [liximomo](https://github.com/liximomo) (original author) and [Natizyskunk](https://github.com/Natizyskunk) (maintained fork this build is based on). Only the marketing identity changed: all `sftp.*` command ids, settings, views, and the `.vscode/sftp.json` configuration format remain fully compatible.
 
 * New Feature : Folder Compare view - compare a local folder against its remote counterpart, grouped into Modified / Timestamp Only / New Remote / New Local with click-to-diff, per-entry actions, group (whole-category) actions, compare-selected-files, reveal in local/remote explorer, per-file delete, and a persisted Flat / Group by Path layout toggle.
@@ -7,13 +14,10 @@ The extension is now published as **SFTP Workbench** (`heuristics-io.sftp-workbe
 * New Feature : Diff-only transfer (`skipUnmodified`) - explicit folder/project/multi-file transfers skip files already identical on the destination.
 * New Feature : Per-operation transfer progress with cancel, plus global pause/resume/stop for all transfers.
 * New Feature : Parallel transfers - a per-profile `maxConnections` connection pool so transfers, syncs, and folder walks run in parallel.
-* Rebrand : new display name, publisher, repository (https://github.com/aashay-147/vscode-sftp), and README; upstream donation links moved to a credits section.
-
-## 1.17.0 - 2026-07-07
-* New Feature : Folder Compare view - compare a local folder against its remote counterpart, grouped into Modified / Timestamp Only / New Remote / New Local with click-to-diff and per-entry download/upload/timestamp actions.
-* New Feature : Folder Compare group (whole-category) actions - right-click a group header to Download from Remote, Upload to Remote, Match Timestamp (Use Remote/Local), Delete on Remote, or Delete Locally for every file in the group at once. Destructive and overwriting actions require a modal confirmation.
 * Fix : FTP timestamp comparison - modification-time comparison is skipped on FTP (LIST mtimes are unreliable), so the Timestamp Only group no longer over-reports on FTP connections.
 * Fix : Remote Explorer folder commands (Upload/Download Folder) no longer leak onto Folder Compare group headers ("missing targets" error).
+* Rebrand : new display name, publisher, repository (https://github.com/aashay-147/vscode-sftp), and README; upstream donation links moved to a credits section.
+
 
 # Upstream history (vscode-sftp by Natizyskunk / liximomo)
 

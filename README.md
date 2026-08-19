@@ -9,6 +9,7 @@ A Dreamweaver-style SFTP/FTP workflow for VS Code: folder compare with click-to-
 
 ## Table of Contents
 
+- [What's New](#whats-new)
 - [Why this fork](#why-this-fork)
 - [Features](#features)
 - [Roadmap](#roadmap)
@@ -25,6 +26,22 @@ A Dreamweaver-style SFTP/FTP workflow for VS Code: folder compare with click-to-
 - [Support](#support)
 - [License](#license)
 - [Credits & lineage](#credits--lineage)
+
+## What's New
+
+### 2.2.0
+
+- **Local download mirror** (`localDownloadPath`) - explicit downloads land in a per-profile mirror folder (inside or outside the workspace) preserving the remote structure; uploads, re-downloads, compare, and diff of mirror files automatically map back to the true remote path.
+- Mirror-aware Folder Compare and full right-click support for out-of-workspace mirrors.
+- **Implicit upload guard** - with `localDownloadPath` set, explicit uploads and local-to-remote sync of files outside the mirror are always blocked with a warning, so stray files can never land in the remote root and circulate back down.
+- **Menu graying** (`disableUploadMenusOutsideLocalDownloadPath`) - opt-in setting that also grays out the upload/sync context-menu items for out-of-mirror files.
+- Documentation overhaul: restructured README, [Privacy](#privacy) statement (no data collection or telemetry), refreshed configuration/commands/settings docs.
+
+### 2.0.0
+
+First release under the new listing: rebranded as **SFTP Workbench** (`heuristics-io.sftp-workbench`), fully compatible with vscode-sftp configs and commands. Introduced Folder Compare with click-to-diff and group actions, Clear Compare, overwrite confirmation (`confirmOverwrite`), diff-only transfer (`skipUnmodified`), per-operation progress with pause/resume/stop, and parallel transfers (`maxConnections`).
+
+Full history in the [CHANGELOG](CHANGELOG.md).
 
 ## Why this fork
 
@@ -59,7 +76,7 @@ The upstream extension is a great sync tool, but it stops short of a full folder
 
 ## Privacy
 
-SFTP Workbench collects **no data whatsoever**: no telemetry, no usage analytics, no crash reporting, no tracking of any kind. The extension talks only to the servers you configure in `sftp.json` - nothing else leaves your machine.
+SFTP Workbench collects **no data whatsoever**: no telemetry, no usage analytics, no crash reporting, no tracking of any kind. The extension talks only to the servers you configure in `sftp.json`.
 
 ## Installation
 
@@ -102,22 +119,24 @@ that you wish to first download the contents of a remote server folder in order 
 2. `Ctrl+Shift+P` on Windows/Linux or `Cmd+Shift+P` on Mac open command palette, run `SFTP: config` command.
 3. A basic configuration file will appear named `sftp.json` under the `.vscode` directory, open and edit the configuration parameters with your remote server information.
 
-For instance:
-```json
-{
-    "name": "Profile Name",
-    "host": "name_of_remote_host",
-    "protocol": "ftp",
-    "port": 21,
-    "secure": true,
-    "username": "username",
-    "remotePath": "/public_html/project", // <--- This is the path which will be downloaded if you "Download Project"
-    "password": "password",
-    "uploadOnSave": false
-}
-```
-The password parameter in `sftp.json` is optional, if left out you will be prompted for a password on sync.
-_Note：_ backslashes and other special characters must be escaped with a backslash.
+    For instance:
+
+    ```json
+    {
+        "name": "Profile Name",
+        "host": "name_of_remote_host",
+        "protocol": "ftp",
+        "port": 21,
+        "secure": true,
+        "username": "username",
+        "remotePath": "/public_html/project", // <--- This is the path which will be downloaded if you "Download Project"
+        "password": "password",
+        "uploadOnSave": false
+    }
+    ```
+
+    The password parameter in `sftp.json` is optional, if left out you will be prompted for a password on sync.
+    _Note：_ backslashes and other special characters must be escaped with a backslash.
 
 4. Save and close the `sftp.json` file.
 5. `Ctrl+Shift+P` on Windows/Linux or `Cmd+Shift+P` on Mac open command palette.
@@ -133,6 +152,7 @@ For detailed explanations please see the [documentation](docs/home.md).
 You can see the full list of configuration options in the [configuration docs](docs/configuration.md).
 
 ### Simple
+
 ```json
 {
   "host": "host",
@@ -142,6 +162,7 @@ You can see the full list of configuration options in the [configuration docs](d
 ```
 
 ### Profiles
+
 ```json
 {
   "username": "username",
@@ -172,7 +193,9 @@ _Note：_ `context` and `watcher` are only available at root level.
 Use `SFTP: Set Profile` to switch profile.
 
 ### Multiple Context
+
 The context must **not be same**.
+
 ```json
 [
   {
@@ -197,12 +220,15 @@ The context must **not be same**.
 _Note：_ `name` is required in this mode.
 
 ### Connection Hopping
+
 You can connect to a target server through a proxy with ssh protocol.
 
 _Note：_ Variable substitution is not working in a hop configuration.
 
 #### Single Hop
+
 local -> hop -> target
+
 ```json
 {
   "name": "target",
@@ -223,7 +249,9 @@ local -> hop -> target
 ```
 
 #### Multiple Hop
+
 local -> hopa -> hopb -> target
+
 ```json
 {
   "name": "target",
@@ -253,9 +281,11 @@ local -> hopa -> hopb -> target
 ```
 
 ### Configuration in User Setting
+
 You can use `remote` to tell sftp to get the configuration from [remote-fs](https://github.com/liximomo/vscode-remote-fs) (a separate extension, also by liximomo).
 
 In User Setting:
+
 ```json
 "remotefs.remote": {
   "dev": {
@@ -275,6 +305,7 @@ In User Setting:
 ```
 
 In sftp.json:
+
 ```json
 {
   "remote": "dev",
@@ -333,6 +364,7 @@ Files are processed sequentially (FTP serializes on a single control connection)
 _Note:_ with a non-zero `remoteTimeOffsetInHours` the _Modified_ group may over-report changes (known upstream time-offset round-trip issue).
 
 ## Remote Explorer
+
 ![remote-explorer-preview](assets/showcase/remote-explorer.png)
 
 Remote Explorer lets you explore files in remote. You can open Remote Explorer by:
@@ -343,14 +375,17 @@ Remote Explorer lets you explore files in remote. You can open Remote Explorer b
 You can only view a files content with Remote Explorer. Run command `SFTP: Edit in Local` to edit it in local.
 
 ### Multiple Select
+
 You are able to select multiple files/folders at once on the remote server to download and upload. You can do it simply by holding down Ctrl or Shift while selecting all desired files, just like on the regular explorer view.
 
 _Note：_ You need to manually refresh the parent folder after you **delete** a file if the explorer isn't correctly updated.
 
 ### Order
+
 You can order the remote Explorer by adding the `remoteExplorer.order` parameter inside your `sftp.json` config file.
 
 In sftp.json:
+
 ```json
 {
   "remoteExplorer": {
@@ -360,14 +395,17 @@ In sftp.json:
 ```
 
 ## Debug
+
 1. Open User Settings.
-  - On Windows/Linux - `File > Preferences > Settings`
-  - On macOS - `Code > Preferences > Settings`
+   1. On Windows/Linux - `File > Preferences > Settings`
+   2. On macOS - `Code > Preferences > Settings`
+
 2. Set `sftp.debug` to `true` and reload vscode.
 3. View the logs in `View > Output > sftp`.
 
 ## FAQ
-You can see all the Frequently Asked Questions [here](./FAQ.md).
+
+You can see all the [Frequently Asked Questions here](./FAQ.md).
 
 ## Changelog
 
